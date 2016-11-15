@@ -1,0 +1,218 @@
+<html>
+  <head>
+    <title>AVG Project</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+    .task {
+      border: 1px solid;
+      padding: 10px 10px 10px 30px;
+      color: #FFFFFF;
+      width: 200px;
+    }
+    .task_p {
+      background-color: #6666FF;
+    }
+    .task_t {
+      background-color: #9aa9fc;
+    }
+    .task_btn {
+      font-family: Verdana;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .task_btn_p {
+      font-size: 16pt;
+      font-weight: bold;
+    }
+    .task_btn_t {
+      font-size: 11pt;
+      font-weight: bold;
+    }
+    .task_btn_s {
+      font-size: 8pt;
+    }
+    .task_btn:hover {
+      color: #66FFFF;
+    }
+    </style>
+    <script src="/tree_items.js"></script>
+    <script>
+    <!--
+      //  Сначала напишем все задачки
+
+      var tasks = [
+        { id: 5, parent_id: 0, title: "project 1", type: node_type.project },
+        { id: 13, parent_id: 7, title: "p2 task 1", type: node_type.task },
+        { id: 7, parent_id: 0, title: "project 2", type: node_type.project },
+        { id: 11, parent_id: 0, title: "project 3", type: node_type.project },
+        { id: 12, parent_id: 11, title: "p3 task 1", type: node_type.task },
+        { id: 14, parent_id: 7, title: "p2 task 2", type: node_type.task },
+      ];
+
+      var app = { };
+
+      function get_tasks()
+      {
+        start_ajax(
+          "avgproject.pl?action=1",
+          function (r, app)
+          {
+            var tasks_code = "app.tasks = [\n" + r.responseText + "];";
+
+            eval(tasks_code);
+
+            app.tasks = tree_store_build_tree(app.tasks);
+
+            /*
+              Вообще, функция "tree_store_build_tree" всегда завершается успешно, за
+              исключением случаев когда остаются элементы для которых parent_node найти
+              не удалось. Поэтому нужно будет сделать обработку этого случая когда будет
+              время.
+            */
+
+            var main = document.getElementById("main");
+
+            app.items = {
+              offset_step: 50,
+            };
+
+            tree_store_html_gen(main, app.tasks, app.items);
+          },
+          app
+        );
+      }
+
+      function log_message(msg)
+      {
+            var log = document.getElementById("log");
+
+            log.innerHTML += msg;
+      }
+
+      function on_load()
+      {
+        get_tasks(app);
+      }
+
+      function add_new_task(parent_node, new_node)
+      {
+        start_ajax(
+          "avgproject.pl?action=2" +
+          "&parent_id=" + new_node.parent_id +
+          "&title=" + new_node.title +
+          "&type=" + new_node.type,
+          function (r, args)
+          {
+            var resp;
+
+            var cmd = "resp = " + r.responseText + ";";
+
+            eval(cmd);
+
+            if (!resp.id) // Произошла ошибка во время добавления на сервере
+              return;
+
+            args.new_node.id           = resp.id;
+            args.new_node.dtm_created  = resp.dtm_created;
+
+            var prev = tree_store_add(args.parent_node, args.new_node);
+
+            eval("app.items.item_" + args.new_node.id + " = args.new_node;");
+
+            var table_new = document.createElement("table");
+
+            table_new.id = "table_item_" + args.new_node.id;
+
+            table_new.innerHTML = gen_html_for_node(args.new_node);
+
+            /*
+              Осталось вставить новый html в нужном месте
+              prev  next
+              NULL        Вставить самым первым дочерним элементом
+              NULL  NULL  Вставить единственным дочерним элементом
+                    NULL  Вставить последним дочерним элементом
+                          Вставить между prev и next
+            */
+
+            var bn = tree_store_get_bottom_node(args.new_node);
+
+            var table = document.getElementById("table_item_" + bn.id);
+
+            table.parentNode.insertBefore(table_new, table);
+          },
+          { parent_node: parent_node, new_node: new_node }
+        );
+
+        return new_node;
+      }
+
+      function projects_tree_item_new_subt_click(parent_node)
+      {
+        var new_node = {
+          parent_id:  parent_node.id,
+        };
+
+        if (app.tasks == parent_node)
+        {
+          new_node.title  = "Проект";
+          new_node.type   = node_type.project;
+          new_node.offset = 0;
+        }
+        else
+        {
+          new_node.title  = "задача";
+          new_node.type   = node_type.task;
+          new_node.offset = parent_node.offset + app.items.offset_step;
+        }
+
+        add_new_task(parent_node, new_node);
+      }
+
+      function projects_tree_item_project_click(item)
+      {
+        var task = document.getElementById("task");
+
+        task.innerHTML =
+          "id: "           + item.id           + "<br>\n" +
+          "parent_id: "    + item.parent_id    + "<br>\n" +
+          "title: "        + item.title        + "<br>\n" +
+          "dtm_created: "  + item.dtm_created  + "<br>\n"
+        ;
+      }
+
+      function start_ajax(url, on_succ, ctx)
+      {
+        var r = new XMLHttpRequest();
+
+        r.onreadystatechange = function ()
+        {
+          switch (r.readyState)
+          {
+          case 4:
+            if (r.status == 200)
+            {
+              on_succ(r, ctx);
+            }
+            break;
+          }
+        }
+
+        r.open("GET", url, true);
+        r.send("");
+      }
+    //-->
+    </script>
+  </head>
+  <body onload="on_load()">
+    <h1>AVG Project</h1>
+    <table border="0">
+      <tr>
+        <td><div id="main"></div></td>
+        <td style="vertical-align: top;"><div id="task" style=""></div></td>
+      </tr>
+    </table>
+    <div id="log"></div>
+  </body>
+</html>
+
+<!-- vim: set expandtab ts=2 : //-->
