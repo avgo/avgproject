@@ -9,6 +9,10 @@
       color: #FFFFFF;
       width: 200px;
     }
+    .task_field {
+      width: 200px;
+      height: 40px;
+    }
     .task_p {
       background-color: #6666FF;
     }
@@ -162,11 +166,27 @@
         var task = document.getElementById("task");
 
         task.innerHTML =
-          "id: "           + item.id           + "<br>\n" +
-          "parent_id: "    + item.parent_id    + "<br>\n" +
-          "title: "        + item.title        + "<br>\n" +
-          "dtm_created: "  + item.dtm_created  + "<br>\n"
-        ;
+          "<span style=\"font-size: 24px;\">" + item.title + "</span>\n" +
+
+          "<table>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">ID:</td>\n" +
+          "<td class=\"task_field\">" + item.id + "</td>\n" +
+          "</tr>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">Parent ID:</td>\n" +
+          "<td class=\"task_field\">" + item.parent_id + "</td>\n" +
+          "</tr>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">Дата создания:</td>\n" +
+          "<td class=\"task_field\">" + item.dtm_created + "</td>\n" +
+          "</tr>\n" +
+
+          "</table>\n" +
+          "";
       }
 
       function start_ajax(url, on_succ, ctx)
@@ -196,8 +216,12 @@
     <h1>AVG Project</h1>
     <table border="0">
       <tr>
-        <td><div id="main"></div></td>
-        <td style="vertical-align: top;"><div id="task" style=""></div></td>
+        <td style="vertical-align: top; width: 32%;">
+          <div id="main"></div>
+        </td>
+        <td style="vertical-align: top;">
+          <div id="task"></div>
+        </td>
       </tr>
     </table>
     <div id="log"></div>
