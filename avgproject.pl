@@ -6,8 +6,6 @@ use utf8;
 use CGI;
 use Config::Simple;
 use DBI;
-use JSON;
-use XML::LibXML;
 
 
 
@@ -17,8 +15,6 @@ sub action_get_task_list;
 sub action_task_add;
 sub dbi_connect($);
 sub main;
-sub tasks_to_json;
-sub tasks_to_xml;
 sub template_end;
 sub template_set;
 sub template_start;
@@ -53,19 +49,6 @@ sub action_get_task_list {
 	my $object = shift;
 
 	print "Content-type: text/html; charset=UTF-8\n\n";
-
-	if (0)
-	{
-	print	"{ id: 5, parent_id: 0, title: \"project 1\", type: node_type.project },\n" .
-		"{ id: 13, parent_id: 7, title: \"p2 task 1\", type: node_type.task },\n" .
-		"{ id: 7, parent_id: 0, title: \"project 2\", type: node_type.project },\n" .
-		"{ id: 11, parent_id: 0, title: \"project 3\", type: node_type.project },\n" .
-		"{ id: 12, parent_id: 11, title: \"p3 task 1\", type: node_type.task },\n" .
-		"{ id: 14, parent_id: 7, title: \"p2 task 2\", type: node_type.task },\n"
-	;
-
-	return;
-	}
 
 	my $sth = $object->{dbh}->prepare (
 		"SELECT\n" .
@@ -151,9 +134,9 @@ sub main {
 	$action = "default" unless defined $action;
 
 	my %parameters = (
-		"default" => \&action_default,
-		1 => \&action_get_task_list,
-		2 => \&action_task_add,
+		"default"  => \&action_default,
+		1          => \&action_get_task_list,
+		2          => \&action_task_add,
 	);
 
 	my $handler = $parameters{$action};
@@ -180,46 +163,6 @@ sub string_to_js {
 	$arg =~ s/([\x00-\x08\x0b\x0e-\x1f\x7f-\x7f])/'\\\\x' . unpack('H2', $1)/eg;
 
 	return $arg;
-}
-
-sub tasks_to_json {
-	my $tasks_arr = shift;
-
-	my %hash = map { $_->[0] => 11 } @{$tasks_arr};
-
-	use Data::Dumper;
-
-	return Dumper(\%hash);
-
-	return encode_json ( \%hash ) ;
-}
-
-sub tasks_to_xml {
-	my $tasks_arr = shift;
-
-	my $doc = XML::LibXML::Document->new("1.0", "utf-8");
-
-	my $root = $doc->createElement("root");
-
-	for my $task ( @{$tasks_arr} )
-	{
-		my $el = $doc->createElement("task");
-
-		for my $field ( @{$task} )
-		{
-			my $el2 = $doc->createElement($field->[0]);
-
-			$el2->appendTextNode($field->[1]);
-
-			$el->appendChild($el2);
-		}
-
-		$root->appendChild($el);
-	}
-
-	$doc->setDocumentElement($root);
-
-	return $doc->toString();
 }
 
 sub template_end {

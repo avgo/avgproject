@@ -137,7 +137,6 @@ function tree_store_build_tree(tree_items)
       }
       else
       {
-        console.log("ommiting nbtn %o\n\n", nbtn);
         nbtn_prev = nbtn;
       }
     }
@@ -220,40 +219,6 @@ function tree_store_html_gen(elem, b_tree, ctx)
     "</tr>\n" +
     "</table>\n"
   ;
-
-  var d = new Date();
-
-  var month_str = [
-    "января",
-    "февраля",
-    "марта",
-    "апреля",
-    "мая",
-    "июня",
-    "июля",
-    "августа",
-    "сентября",
-    "октября",
-    "ноября",
-    "декабря"
-  ];
-
-  function pad(n)
-  {
-    if (n < 10)
-      return "0" + n;
-    else
-      return n;
-  }
-
-  args.html +=
-    "<br>\n" +
-    pad(d.getDate()) + " " +
-    month_str[d.getMonth()] + " " +
-    d.getFullYear() + ", " +
-    pad(d.getHours()) + ":" +
-    pad(d.getMinutes()) + ":" +
-    pad(d.getSeconds()) + " (" + Math.floor(d.getTime() / 1000) + ")";
 
   elem.innerHTML = args.html;
 }
