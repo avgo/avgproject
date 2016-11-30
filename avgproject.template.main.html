@@ -3,6 +3,13 @@
     <title>AVG Project</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
+    .small_button {
+      font-size: 11px;
+      border: 0px solid rgb(255, 153, 153);
+      background-color: transparent;
+      cursor: pointer;
+      color: rgb(102, 102, 255);
+    }
     .task {
       border: 1px solid;
       padding: 10px 10px 10px 30px;
@@ -43,6 +50,11 @@
     <script>
     <!--
       var app = { };
+
+      function string_escape_js(s)
+      {
+        return s.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"").replace(/'/g, "\\'");
+      }
 
       function get_tasks()
       {
@@ -161,12 +173,122 @@
         add_new_task(parent_node, new_node);
       }
 
+      function avgtk_label_click_1(label_id, title_get, title_set, args)
+      {
+        var label_label_id = label_id + "_label";
+
+        var label_label = document.getElementById(label_label_id);
+
+        var label_btn_id = label_id + "_btn";
+
+        var label_btn = document.getElementById(label_btn_id);
+
+        var label_edit_id = label_id + "_edit";
+
+        label_label.innerHTML =
+          "<input id=\"" + label_edit_id + "\" type=\"text\">";
+
+        var label_edit = document.getElementById(label_edit_id);
+
+        var title;
+
+        eval("title = " + title_get + "(" + args + ");");
+
+        label_edit.addEventListener("keyup", function (event)
+          {
+            event.preventDefault();
+            if (event.keyCode != 13)
+              return;
+
+            var r;
+
+            var new_title = label_edit.value;
+
+            var code = "r = " + title_set + "('" +
+              title_get + "', '" +
+              string_escape_js(new_title) + "', " +
+              args + ");";
+
+            eval(code);
+
+            while (label_label.firstChild)
+              label_label.removeChild(label_label.firstChild);
+
+            label_label.appendChild(document.createTextNode(r));
+          }
+        );
+
+        label_edit.value = title;
+
+        label_edit.focus();
+
+        label_edit.selectionStart  = 0;
+        label_edit.selectionEnd    = label_edit.value.length;
+      }
+
+      function avgtk_label(label_id, title_get, title_set, args)
+      {
+        var label_label_id = label_id + "_label";
+
+        var label_btn_id = label_id + "_btn";
+
+        var title;
+
+        eval("title = " + title_get + "(" + args + ");");
+
+        return (
+          "<div>" +
+          "<span id=\"" + label_label_id + "\" style=\"font-size: 24px;\">" +
+          title +
+          "</span>\n" +
+          "<input " +
+            "type=\"button\" " +
+            "id=\"" + label_btn_id + "\" " +
+            "class=\"small_button\" " +
+            "value=\"edit\" " +
+            "onclick=\"" + avgtk_label_handler(label_id, title_get, title_set, args) + "\"" +
+          ">" +
+          "</div>\n" +
+          ""
+        );
+      }
+
+      function avgtk_label_handler(label_id, title_get, title_set, args)
+      {
+        return "avgtk_label_click_1('" + label_id + "', '" + title_get + "', '" + title_set + "', '" + args + "')";
+      }
+
+      function task_ws_task_title_get(args)
+      {
+        var item;
+
+        eval("item = app.items.item_" + args.id + ";");
+
+        return item.title;
+      }
+
+      function task_ws_task_title_set(title_get, new_title, args)
+      {
+        var item;
+
+        eval("item = app.items.item_" + args.id + ";");
+
+        item.title = new_title;
+
+        return new_title;
+      }
+
       function projects_tree_item_project_click(item)
       {
         var task = document.getElementById("task");
 
         task.innerHTML =
-          "<span style=\"font-size: 24px;\">" + item.title + "</span>\n" +
+          avgtk_label(
+            "task_ws_task_title",
+            "task_ws_task_title_get",
+            "task_ws_task_title_set",
+            "{ id: " + item.id + " }"
+          ) +
 
           "<table>\n" +
 
@@ -186,7 +308,8 @@
           "</tr>\n" +
 
           "</table>\n" +
-          "";
+          ""
+        ;
       }
 
       function start_ajax(url, on_succ, ctx)
