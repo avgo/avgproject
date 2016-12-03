@@ -269,6 +269,17 @@
 
       function task_ws_task_title_set(title_get, new_title, args)
       {
+        start_ajax(
+          "avgproject.pl?action=3" +
+          "&id=" + args.id +
+          "&title=" + encodeURIComponent(new_title),
+          function (r, args)
+          {
+            // alert(r.responseText);
+          },
+          { }
+        );
+
         var item;
 
         eval("item = app.items.item_" + args.id + ";");

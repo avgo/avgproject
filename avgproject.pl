@@ -13,6 +13,7 @@ use DBI;
 sub action_default;
 sub action_get_task_list;
 sub action_task_add;
+sub action_task_edit;
 sub dbi_connect($);
 sub main;
 sub template_end;
@@ -100,6 +101,24 @@ sub action_task_add {
 	printf "{ id: %d, dtm_created: \"%s\" }", $id, $dtm_created;
 }
 
+sub action_task_edit {
+	my $object = shift;
+
+	my $id    = $cgi->param("id");
+	my $title = $cgi->param("title");
+
+	my $sth = $object->{dbh}->prepare(
+			"UPDATE `tasks` SET title = ? WHERE id = ?;")
+			or die "prepare(): $!\n";
+	my $rv = $sth->execute($title, $id) or die $sth->errstr;
+
+	print "Content-type: text/html; charset=UTF-8\n\n";
+
+	printf	"'%s'\n" .
+		"'%s'\n",
+		$id, $title;
+}
+
 sub dbi_connect($) {
 	my $par = shift;
 
@@ -137,6 +156,7 @@ sub main {
 		"default"  => \&action_default,
 		1          => \&action_get_task_list,
 		2          => \&action_task_add,
+		3          => \&action_task_edit,
 	);
 
 	my $handler = $parameters{$action};
