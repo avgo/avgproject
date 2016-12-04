@@ -35,7 +35,7 @@ function gen_html_for_node(i)
 
       "<span " +
         "class=\"task_btn " + task_btn_style + "\" " +
-        "onclick=\"projects_tree_item_project_click(app.items.item_" + i.id + ");\"" +
+        "onclick=\"projects_tree_view_item_project_click(app.tasks.items.item_" + i.id + ");\"" +
       ">" +
         i.title + " (" + i.id + ", " + i.parent_id + ")" +
       "</span>\n" +
@@ -43,7 +43,7 @@ function gen_html_for_node(i)
 
       "<span " +
         "class=\"task_btn task_btn_s\" " +
-        "onclick=\"projects_tree_item_new_subt_click(app.items.item_" + i.id + ");\"" +
+        "onclick=\"projects_tree_view_item_new_subt_click(app.tasks.items.item_" + i.id + ");\"" +
       ">" +
         "(new subtask)" +
       "</span>" +
@@ -54,7 +54,7 @@ function gen_html_for_node(i)
     );
 }
 
-function tree_store_add(parent_node, new_node)
+function tree_store_add(tree, parent_node, new_node)
 {
   var prev = null; var node = null;
 
@@ -75,10 +75,12 @@ function tree_store_add(parent_node, new_node)
   new_node.next    = node;
   new_node.parent  = parent_node;
 
+  eval("tree.items.item_" + new_node.id + " = new_node;");
+
   return prev;
 }
 
-function tree_store_build_tree(tree_items)
+function tree_store_build_tree(tree_items, offset_step)
 {
   /*
       Массив на самом деле делится на две части: в верхней части уже
@@ -91,7 +93,9 @@ function tree_store_build_tree(tree_items)
 
   var b_tree = {
     id: 0,
-    title: "[root]"
+    items: { },
+    offset_step: offset_step,
+    title: "[root]",
   };
 
   if (tree_items.length == 0)
@@ -126,7 +130,7 @@ function tree_store_build_tree(tree_items)
 
       if (bt_parent_node)
       {
-        tree_store_add(bt_parent_node, nbtn);
+        tree_store_add(b_tree, bt_parent_node, nbtn);
 
         // отвязать nbtn от старого места
 
@@ -199,12 +203,12 @@ function tree_store_get_new_id(node, id)
   return id;
 }
 
-function tree_store_html_gen(elem, b_tree, ctx)
+function tree_store_html_gen(elem, b_tree)
 {
   var args = {
+    b_tree: b_tree,
     html: "",
     offset: 0,
-    ctx: ctx
   };
 
   tree_store_html_gen2(b_tree, args);
@@ -214,7 +218,7 @@ function tree_store_html_gen(elem, b_tree, ctx)
     "<tr>\n" +
     "<td width=" + args.offset + ">&nbsp;</td>\n" +
     "<td class=\"task task_p\">" +
-    "<span class=\"task_btn task_btn_p\" onclick=\"projects_tree_item_new_subt_click(app.tasks);\">+[ADD]</span><br>\n" +
+    "<span class=\"task_btn task_btn_p\" onclick=\"projects_tree_view_item_new_subt_click(app.tasks);\">+[ADD]</span><br>\n" +
     "</td>" +
     "</tr>\n" +
     "</table>\n"
@@ -223,13 +227,11 @@ function tree_store_html_gen(elem, b_tree, ctx)
   elem.innerHTML = args.html;
 }
 
-function tree_store_html_gen2(b_tree, args)
+function tree_store_html_gen2(parent_node, args)
 {
-  for (var i = b_tree.first; i; i = i.next)
+  for (var i = parent_node.first; i; i = i.next)
   {
     i.offset = args.offset;
-
-    eval("args.ctx.item_" + i.id + " = i;");
 
     args.html +=
       "<table id=\"table_item_" + i.id + "\" border=\"0\">\n" +
@@ -239,11 +241,11 @@ function tree_store_html_gen2(b_tree, args)
 
     if (i.first)
     {
-      args.offset += args.ctx.offset_step;
+      args.offset += args.b_tree.offset_step;
 
       tree_store_html_gen2(i, args);
 
-      args.offset -= args.ctx.offset_step;
+      args.offset -= args.b_tree.offset_step;
     }
   }
 }

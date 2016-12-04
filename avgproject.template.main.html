@@ -51,22 +51,17 @@
     <!--
       var app = { };
 
-      function string_escape_js(s)
-      {
-        return s.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"").replace(/'/g, "\\'");
-      }
-
       function get_tasks()
       {
         start_ajax(
           "avgproject.pl?action=1",
           function (r, app)
           {
-            var tasks_code = "app.tasks = [\n" + r.responseText + "];";
+            var tasks_nodes;
 
-            eval(tasks_code);
+            eval("tasks_nodes = [\n" + r.responseText + "\n];");
 
-            app.tasks = tree_store_build_tree(app.tasks);
+            app.tasks = tree_store_build_tree(tasks_nodes, 50);
 
             /*
               Вообще, функция "tree_store_build_tree" всегда завершается успешно, за
@@ -77,11 +72,7 @@
 
             var main = document.getElementById("main");
 
-            app.items = {
-              offset_step: 50,
-            };
-
-            tree_store_html_gen(main, app.tasks, app.items);
+            tree_store_html_gen(main, app.tasks);
           },
           app
         );
@@ -89,9 +80,9 @@
 
       function log_message(msg)
       {
-            var log = document.getElementById("log");
+        var log = document.getElementById("log");
 
-            log.innerHTML += msg;
+        log.innerHTML += msg;
       }
 
       function on_load()
@@ -99,8 +90,25 @@
         get_tasks(app);
       }
 
-      function add_new_task(parent_node, new_node)
+      function projects_tree_view_item_new_subt_click(parent_node)
       {
+        var new_node = {
+          parent_id: parent_node.id,
+        };
+
+        if (app.tasks == parent_node)
+        {
+          new_node.title  = "Проект";
+          new_node.type   = node_type.project;
+          new_node.offset = 0;
+        }
+        else
+        {
+          new_node.title  = "задача";
+          new_node.type   = node_type.task;
+          new_node.offset = parent_node.offset + app.tasks.offset_step;
+        }
+
         start_ajax(
           "avgproject.pl?action=2" +
           "&parent_id=" + new_node.parent_id +
@@ -117,18 +125,19 @@
             if (!resp.id) // Произошла ошибка во время добавления на сервере
               return;
 
-            args.new_node.id           = resp.id;
-            args.new_node.dtm_created  = resp.dtm_created;
+            var new_node    = args.new_node;
+            var parent_node = args.parent_node;
 
-            var prev = tree_store_add(args.parent_node, args.new_node);
+            new_node.id           = resp.id;
+            new_node.dtm_created  = resp.dtm_created;
 
-            eval("app.items.item_" + args.new_node.id + " = args.new_node;");
+            var prev = tree_store_add(app.tasks, parent_node, new_node);
 
             var table_new = document.createElement("table");
 
-            table_new.id = "table_item_" + args.new_node.id;
+            table_new.id = "table_item_" + new_node.id;
 
-            table_new.innerHTML = gen_html_for_node(args.new_node);
+            table_new.innerHTML = gen_html_for_node(new_node);
 
             /*
               Осталось вставить новый html в нужном месте
@@ -139,7 +148,7 @@
                           Вставить между prev и next
             */
 
-            var bn = tree_store_get_bottom_node(args.new_node);
+            var bn = tree_store_get_bottom_node(new_node);
 
             var table = document.getElementById("table_item_" + bn.id);
 
@@ -147,33 +156,132 @@
           },
           { parent_node: parent_node, new_node: new_node }
         );
-
-        return new_node;
       }
 
-      function projects_tree_item_new_subt_click(parent_node)
+      function projects_tree_view_item_project_click(item)
       {
-        var new_node = {
-          parent_id:  parent_node.id,
-        };
+        var task = document.getElementById("task");
 
-        if (app.tasks == parent_node)
-        {
-          new_node.title  = "Проект";
-          new_node.type   = node_type.project;
-          new_node.offset = 0;
-        }
-        else
-        {
-          new_node.title  = "задача";
-          new_node.type   = node_type.task;
-          new_node.offset = parent_node.offset + app.items.offset_step;
-        }
+        task.innerHTML =
+          toolkit_label(
+            "task_ws_task_title",
+            "task_ws_task_title_get",
+            "task_ws_task_title_set",
+            "{ id: " + item.id + " }"
+          ) +
 
-        add_new_task(parent_node, new_node);
+          "<table>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">ID:</td>\n" +
+          "<td class=\"task_field\">" + item.id + "</td>\n" +
+          "</tr>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">Parent ID:</td>\n" +
+          "<td class=\"task_field\">" + item.parent_id + "</td>\n" +
+          "</tr>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">Дата создания:</td>\n" +
+          "<td class=\"task_field\">" + item.dtm_created + "</td>\n" +
+          "</tr>\n" +
+
+          "</table>\n" +
+          ""
+        ;
       }
 
-      function avgtk_label_click_1(label_id, title_get, title_set, args)
+      function start_ajax(url, on_succ, ctx)
+      {
+        var r = new XMLHttpRequest();
+
+        r.onreadystatechange = function ()
+        {
+          switch (r.readyState)
+          {
+          case 4:
+            if (r.status == 200)
+            {
+              on_succ(r, ctx);
+            }
+            break;
+          }
+        }
+
+        r.open("GET", url, true);
+        r.send("");
+      }
+
+      function string_escape_js(s)
+      {
+        return s.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"").replace(/'/g, "\\'");
+      }
+
+      function task_ws_task_title_get(args)
+      {
+        var item = tasks_get_task_by_id(args.id);
+
+        return item.title;
+      }
+
+      function task_ws_task_title_set(title_get, new_title, args)
+      {
+        start_ajax(
+          "avgproject.pl?action=3" +
+          "&id=" + args.id +
+          "&title=" + encodeURIComponent(new_title),
+          function (r, args)
+          {
+            // alert(r.responseText);
+          },
+          { }
+        );
+
+        var item = tasks_get_task_by_id(args.id);
+
+        item.title = new_title;
+
+        return new_title;
+      }
+
+      function tasks_get_task_by_id(id)
+      {
+        var item;
+
+        eval("item = app.tasks.items.item_" + id + ";");
+
+        return item;
+      }
+
+      function toolkit_label(label_id, title_get, title_set, args)
+      {
+        var label_label_id = label_id + "_label";
+
+        var label_btn_id = label_id + "_btn";
+
+        var title;
+
+        eval("title = " + title_get + "(" + args + ");");
+
+        return (
+          "<div>" +
+          "<span id=\"" + label_label_id + "\" style=\"font-size: 24px;\">" +
+          title +
+          "</span>\n" +
+          "<input " +
+            "type=\"button\" " +
+            "id=\"" + label_btn_id + "\" " +
+            "class=\"small_button\" " +
+            "value=\"edit\" " +
+            "onclick=\"" + toolkit_label_handler(label_id, title_get, title_set, args) + "\"" +
+          ">" +
+          "</div>\n" +
+          ""
+        );
+      }
+
+      function toolkit_label_click_1(label_id, title_get, title_set, args)
       {
         var label_label_id = label_id + "_label";
 
@@ -226,122 +334,9 @@
         label_edit.selectionEnd    = label_edit.value.length;
       }
 
-      function avgtk_label(label_id, title_get, title_set, args)
+      function toolkit_label_handler(label_id, title_get, title_set, args)
       {
-        var label_label_id = label_id + "_label";
-
-        var label_btn_id = label_id + "_btn";
-
-        var title;
-
-        eval("title = " + title_get + "(" + args + ");");
-
-        return (
-          "<div>" +
-          "<span id=\"" + label_label_id + "\" style=\"font-size: 24px;\">" +
-          title +
-          "</span>\n" +
-          "<input " +
-            "type=\"button\" " +
-            "id=\"" + label_btn_id + "\" " +
-            "class=\"small_button\" " +
-            "value=\"edit\" " +
-            "onclick=\"" + avgtk_label_handler(label_id, title_get, title_set, args) + "\"" +
-          ">" +
-          "</div>\n" +
-          ""
-        );
-      }
-
-      function avgtk_label_handler(label_id, title_get, title_set, args)
-      {
-        return "avgtk_label_click_1('" + label_id + "', '" + title_get + "', '" + title_set + "', '" + args + "')";
-      }
-
-      function task_ws_task_title_get(args)
-      {
-        var item;
-
-        eval("item = app.items.item_" + args.id + ";");
-
-        return item.title;
-      }
-
-      function task_ws_task_title_set(title_get, new_title, args)
-      {
-        start_ajax(
-          "avgproject.pl?action=3" +
-          "&id=" + args.id +
-          "&title=" + encodeURIComponent(new_title),
-          function (r, args)
-          {
-            // alert(r.responseText);
-          },
-          { }
-        );
-
-        var item;
-
-        eval("item = app.items.item_" + args.id + ";");
-
-        item.title = new_title;
-
-        return new_title;
-      }
-
-      function projects_tree_item_project_click(item)
-      {
-        var task = document.getElementById("task");
-
-        task.innerHTML =
-          avgtk_label(
-            "task_ws_task_title",
-            "task_ws_task_title_get",
-            "task_ws_task_title_set",
-            "{ id: " + item.id + " }"
-          ) +
-
-          "<table>\n" +
-
-          "<tr>\n" +
-          "<td class=\"task_field\">ID:</td>\n" +
-          "<td class=\"task_field\">" + item.id + "</td>\n" +
-          "</tr>\n" +
-
-          "<tr>\n" +
-          "<td class=\"task_field\">Parent ID:</td>\n" +
-          "<td class=\"task_field\">" + item.parent_id + "</td>\n" +
-          "</tr>\n" +
-
-          "<tr>\n" +
-          "<td class=\"task_field\">Дата создания:</td>\n" +
-          "<td class=\"task_field\">" + item.dtm_created + "</td>\n" +
-          "</tr>\n" +
-
-          "</table>\n" +
-          ""
-        ;
-      }
-
-      function start_ajax(url, on_succ, ctx)
-      {
-        var r = new XMLHttpRequest();
-
-        r.onreadystatechange = function ()
-        {
-          switch (r.readyState)
-          {
-          case 4:
-            if (r.status == 200)
-            {
-              on_succ(r, ctx);
-            }
-            break;
-          }
-        }
-
-        r.open("GET", url, true);
-        r.send("");
+        return "toolkit_label_click_1('" + label_id + "', '" + title_get + "', '" + title_set + "', '" + args + "')";
       }
     //-->
     </script>
