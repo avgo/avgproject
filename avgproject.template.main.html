@@ -131,28 +131,9 @@
             new_node.id           = resp.id;
             new_node.dtm_created  = resp.dtm_created;
 
-            var prev = tree_store_add(app.tasks, parent_node, new_node);
+            tree_store_add(app.tasks, parent_node, new_node);
 
-            var table_new = document.createElement("table");
-
-            table_new.id = "table_item_" + new_node.id;
-
-            table_new.innerHTML = gen_html_for_node(new_node);
-
-            /*
-              Осталось вставить новый html в нужном месте
-              prev  next
-              NULL        Вставить самым первым дочерним элементом
-              NULL  NULL  Вставить единственным дочерним элементом
-                    NULL  Вставить последним дочерним элементом
-                          Вставить между prev и next
-            */
-
-            var bn = tree_store_get_bottom_node(new_node);
-
-            var table = document.getElementById("table_item_" + bn.id);
-
-            table.parentNode.insertBefore(table_new, table);
+            projects_tree_view_update(new_node);
           },
           { parent_node: parent_node, new_node: new_node }
         );
@@ -190,6 +171,38 @@
           "</table>\n" +
           ""
         ;
+      }
+
+      function projects_tree_view_update(node)
+      {
+        var is_new;
+
+        var table = document.getElementById("table_item_" + node.id);
+
+        if (table)
+        {
+          is_new = false;
+          while (table.firstChild)
+            table.removeChild(table.firstChild);
+        }
+        else
+        {
+          is_new = true;
+          table = document.createElement("table");
+        }
+
+        table.id = "table_item_" + node.id;
+
+        table.innerHTML = gen_html_for_node(node);
+
+        if (is_new)
+        {
+          var bottom_node = tree_store_get_bottom_node(node);
+
+          var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+          table_bottom.parentNode.insertBefore(table, table_bottom);
+        }
       }
 
       function start_ajax(url, on_succ, ctx)
@@ -241,6 +254,8 @@
         var item = tasks_get_task_by_id(args.id);
 
         item.title = new_title;
+
+        projects_tree_view_update(item);
 
         return new_title;
       }
