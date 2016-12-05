@@ -10,7 +10,7 @@ CREATE TABLE `tasks` (
 	`parent_id` INT UNSIGNED NOT NULL DEFAULT '0',
 	`type` INT UNSIGNED NOT NULL DEFAULT '0',
 	`title` VARCHAR(60),
-	`description` VARCHAR(60),
+	`description` TEXT,
 	`dtm_created` DATETIME,
 	PRIMARY KEY (`id`)
 ) CHARSET = utf8;

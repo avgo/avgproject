@@ -67,8 +67,8 @@ sub action_get_task_list {
 	my $num_rows = $sth->rows;
 
 	while ((my $id, my $parent_id, my $type, my $type_name, my $title, my $description, my $dtm_created) = $sth->fetchrow_array) {
-		printf "{ id: %d, parent_id: %d, title: \"%s\", type: %d, dtm_created: '%s' },\n",
-			$id, $parent_id, string_to_js($title), $type, $dtm_created;
+		printf "{ id: %d, parent_id: %d, title: \"%s\", type: %d, dtm_created: '%s', description: '%s' },\n",
+			$id, $parent_id, string_to_js($title), $type, $dtm_created, string_to_js($description);
 	}
 }
 
@@ -77,14 +77,15 @@ sub action_task_add {
 
 	my $parent_id = $cgi->param("parent_id");
 	my $title = $cgi->param("title");
+	my $description = $cgi->param("description");
 	my $type = $cgi->param("type");
 
 	printf	"Content-type: text/html; charset=UTF-8\n\n";
 
 	my $sth = $object->{dbh}->prepare(
-			"INSERT INTO `tasks` (parent_id, title, type, dtm_created) VALUES (?,?,?,NOW());")
+			"INSERT INTO `tasks` (parent_id, title, description, type, dtm_created) VALUES (?,?,?,?,NOW());")
 			or die "prepare(): $!\n";
-	my $rv = $sth->execute($parent_id, $title, $type) or die $sth->errstr;
+	my $rv = $sth->execute($parent_id, $title, $description, $type) or die $sth->errstr;
 
 	$sth = $object->{dbh}->prepare("SELECT LAST_INSERT_ID();")
 			or die "prepare(): $!\n";
@@ -104,19 +105,40 @@ sub action_task_add {
 sub action_task_edit {
 	my $object = shift;
 
-	my $id    = $cgi->param("id");
-	my $title = $cgi->param("title");
-
-	my $sth = $object->{dbh}->prepare(
-			"UPDATE `tasks` SET title = ? WHERE id = ?;")
-			or die "prepare(): $!\n";
-	my $rv = $sth->execute($title, $id) or die $sth->errstr;
-
 	print "Content-type: text/html; charset=UTF-8\n\n";
 
-	printf	"'%s'\n" .
-		"'%s'\n",
-		$id, $title;
+	my $id = $cgi->param("id");
+
+	if (not defined $id)
+	{
+		print "{ msg: \"error 1!\" }\n";
+		return;
+	}
+
+	my $query_str; my @query_arr; my $comma;
+
+	for my $variable ( qw(title description) )
+	{
+		if (my $param = $cgi->param($variable))
+		{
+			$query_str .= sprintf "%s%s = ?", $comma, $variable;
+
+			push @query_arr, $param;
+
+			$comma = ", ";
+		}
+	}
+
+	if ($#query_arr == -1)
+	{
+		print "{ msg: \"error 2!\" }\n";
+		return;
+	}
+
+	my $sth = $object->{dbh}->prepare(
+			"UPDATE `tasks` SET $query_str WHERE id = ?;")
+			or die "prepare(): $!\n";
+	my $rv = $sth->execute(@query_arr, $id) or die $sth->errstr;
 }
 
 sub dbi_connect($) {
