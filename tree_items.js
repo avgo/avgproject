@@ -74,6 +74,10 @@ function tree_store_add(tree, parent_node, new_node)
 
   new_node.next    = node;
   new_node.parent  = parent_node;
+  new_node.prev    = prev;
+
+  if (node)
+    node.prev = new_node;
 
   eval("tree.items.item_" + new_node.id + " = new_node;");
 
