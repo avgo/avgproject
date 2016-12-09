@@ -183,19 +183,6 @@
         );
 
         task.appendChild(elem_textarea);
-
-        function enum_child(elem,item)
-        {
-          elem.appendChild(document.createElement("br"));
-
-          for (var i = item.last; i; i = i.prev)
-          {
-            elem.appendChild(document.createTextNode(i.id + ". " + i.title));
-            elem.appendChild(document.createElement("br"));
-          }
-        }
-
-        enum_child(task,item);
       }
 
       function projects_tree_view_update(node)

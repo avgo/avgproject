@@ -66,36 +66,6 @@ function tree_store_add(tree, parent_node, new_node)
     */
   }
 
-  // ** first version (commented, not usable) **
-
-  /* if (node)
-  {
-    if (node.prev)
-      node.prev.next = new_node;
-    else
-      parent_node.first = new_node;
-
-    new_node.prev = node.prev;
-
-    node.prev = new_node;
-  }
-  else
-  {
-    if (parent_node.last)
-      parent_node.last.next = new_node;
-    else
-      parent_node.first = new_node;
-
-    new_node.prev = parent_node.last;
-
-    parent_node.last = new_node;
-  }
-
-  new_node.next    = node;
-  new_node.parent  = parent_node; */
-
-  // ** another version (not commented, usable)  **
-
   if (node)
     prev = node.prev;
   else
@@ -115,8 +85,6 @@ function tree_store_add(tree, parent_node, new_node)
     parent_node.last = new_node;
 
   new_node.parent  = parent_node;
-
-  // ** end **
 
   eval("tree.items.item_" + new_node.id + " = new_node;");
 
