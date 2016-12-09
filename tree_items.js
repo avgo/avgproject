@@ -67,9 +67,15 @@ function tree_store_add(tree, parent_node, new_node)
   }
 
   if (node)
+  {
     prev = node.prev;
+    node.prev = new_node;
+  }
   else
+  {
     prev = parent_node.last;
+    parent_node.last = new_node;
+  }
 
   if (prev)
     prev.next = new_node;
@@ -79,12 +85,7 @@ function tree_store_add(tree, parent_node, new_node)
   new_node.prev = prev;
   new_node.next = node;
 
-  if (node)
-    node.prev = new_node;
-  else
-    parent_node.last = new_node;
-
-  new_node.parent  = parent_node;
+  new_node.parent = parent_node;
 
   eval("tree.items.item_" + new_node.id + " = new_node;");
 
