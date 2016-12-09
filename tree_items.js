@@ -56,7 +56,7 @@ function gen_html_for_node(i)
 
 function tree_store_add(tree, parent_node, new_node)
 {
-  var prev = null; var node = null;
+  var node;
 
   for (node = parent_node.first; node; node = node.next)
   {
@@ -64,20 +64,59 @@ function tree_store_add(tree, parent_node, new_node)
     if (new_node.id >= node.id)
       break;
     */
-    prev = node;
   }
+
+  // ** first version (commented, not usable) **
+
+  /* if (node)
+  {
+    if (node.prev)
+      node.prev.next = new_node;
+    else
+      parent_node.first = new_node;
+
+    new_node.prev = node.prev;
+
+    node.prev = new_node;
+  }
+  else
+  {
+    if (parent_node.last)
+      parent_node.last.next = new_node;
+    else
+      parent_node.first = new_node;
+
+    new_node.prev = parent_node.last;
+
+    parent_node.last = new_node;
+  }
+
+  new_node.next    = node;
+  new_node.parent  = parent_node; */
+
+  // ** another version (not commented, usable)  **
+
+  if (node)
+    prev = node.prev;
+  else
+    prev = parent_node.last;
 
   if (prev)
     prev.next = new_node;
   else
     parent_node.first = new_node;
 
-  new_node.next    = node;
-  new_node.parent  = parent_node;
-  new_node.prev    = prev;
+  new_node.prev = prev;
+  new_node.next = node;
 
   if (node)
     node.prev = new_node;
+  else
+    parent_node.last = new_node;
+
+  new_node.parent  = parent_node;
+
+  // ** end **
 
   eval("tree.items.item_" + new_node.id + " = new_node;");
 
