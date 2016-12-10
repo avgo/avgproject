@@ -14,6 +14,7 @@ sub action_default;
 sub action_get_task_list;
 sub action_task_add;
 sub action_task_edit;
+sub action_task_up;
 sub dbi_connect($);
 sub main;
 sub template_end;
@@ -59,16 +60,41 @@ sub action_get_task_list {
 		"  task_type.name,\n" .
 		"  tasks.title,\n" .
 		"  tasks.description,\n" .
-		"  tasks.dtm_created\n" .
+		"  tasks.dtm_created,\n" .
+		"  tasks.priority\n" .
 		"FROM tasks LEFT JOIN task_type ON tasks.type = task_type.id;\n"
 	) or die "prepare(): $!";
 
 	my $rv = $sth->execute or die $sth->errstr;
 	my $num_rows = $sth->rows;
 
-	while ((my $id, my $parent_id, my $type, my $type_name, my $title, my $description, my $dtm_created) = $sth->fetchrow_array) {
-		printf "{ id: %d, parent_id: %d, title: \"%s\", type: %d, dtm_created: '%s', description: '%s' },\n",
-			$id, $parent_id, string_to_js($title), $type, $dtm_created, string_to_js($description);
+	while ((
+		my $id,
+		my $parent_id,
+		my $type,
+		my $type_name,
+		my $title,
+		my $description,
+		my $dtm_created,
+		my $priority
+		) = $sth->fetchrow_array )
+	{
+		printf "{ " .
+			"id: %d, " .
+			"parent_id: %d, " .
+			"title: \"%s\", " .
+			"type: %d, " .
+			"dtm_created: '%s', " .
+			"description: '%s', " .
+			"priority: '%s' " .
+			"},\n",
+			$id,
+			$parent_id,
+			string_to_js($title),
+			$type,
+			$dtm_created,
+			string_to_js($description),
+			$priority;
 	}
 }
 
@@ -141,6 +167,33 @@ sub action_task_edit {
 	my $rv = $sth->execute(@query_arr, $id) or die $sth->errstr;
 }
 
+sub action_task_up {
+	my $object = shift;
+
+	print "Content-type: text/html; charset=UTF-8\n\n";
+
+	my $id = $cgi->param("id");
+
+	if (not defined $id)
+	{
+		print "error!\n";
+		return;
+	}
+
+	my $sth = $object->{dbh}->prepare(
+			"UPDATE `tasks` SET priority = NOW() WHERE id = ?;")
+			or die "prepare(): $!\n";
+	my $rv = $sth->execute($id) or die $sth->errstr;
+
+	$sth = $object->{dbh}->prepare("SELECT priority FROM tasks WHERE id = ?;")
+			or die "prepare(): $!\n";
+	$rv = $sth->execute($id) or die $sth->errstr;
+
+	(my $priority) = $sth->fetchrow_array;
+
+	print "priority: '$priority'\n";
+}
+
 sub dbi_connect($) {
 	my $par = shift;
 
@@ -179,6 +232,7 @@ sub main {
 		1          => \&action_get_task_list,
 		2          => \&action_task_add,
 		3          => \&action_task_edit,
+		4          => \&action_task_up,
 	);
 
 	my $handler = $parameters{$action};

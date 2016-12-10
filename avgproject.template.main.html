@@ -49,7 +49,12 @@
     <script src="/tree_items.js"></script>
     <script>
     <!--
-      var app = { };
+      var app = {
+        cmp: function(a,b)
+        {
+          return a.priority < b.priority;
+        },
+      };
 
       function get_tasks()
       {
@@ -61,7 +66,7 @@
 
             eval("tasks_nodes = [\n" + r.responseText + "\n];");
 
-            app.tasks = tree_store_build_tree(tasks_nodes, 50);
+            app.tasks = tree_store_build_tree(tasks_nodes, 50, app.cmp);
 
             /*
               Вообще, функция "tree_store_build_tree" всегда завершается успешно, за
@@ -111,6 +116,8 @@
           new_node.offset       = parent_node.offset + app.tasks.offset_step;
         }
 
+        new_node.priority = "";
+
         start_ajax(
           "avgproject.pl?action=2" +
           "&parent_id=" + new_node.parent_id +
@@ -134,7 +141,7 @@
             new_node.id           = resp.id;
             new_node.dtm_created  = resp.dtm_created;
 
-            tree_store_add(app.tasks, parent_node, new_node);
+            tree_store_add(app.tasks, parent_node, new_node, app.cmp);
 
             projects_tree_view_update(new_node);
           },
@@ -146,6 +153,8 @@
       {
         var task = document.getElementById("task");
 
+        var item_obj_str = "app.tasks.items.item_" + item.id;
+
         task.innerHTML =
           toolkit_label(
             "task_ws_task_title",
@@ -153,6 +162,13 @@
             "task_ws_task_title_set",
             "{ id: " + item.id + " }"
           ) +
+
+          "<input " +
+            "type=\"button\" " +
+            "class=\"small_button\" " +
+            "value=\"up\" " +
+            "onclick=\"task_ws_up_click(" + item_obj_str + ");\"" +
+          ">\n" +
 
           "<table>\n" +
 
@@ -169,6 +185,11 @@
           "<tr>\n" +
           "<td class=\"task_field\">Дата создания:</td>\n" +
           "<td class=\"task_field\">" + item.dtm_created + "</td>\n" +
+          "</tr>\n" +
+
+          "<tr>\n" +
+          "<td class=\"task_field\">Приоритет:</td>\n" +
+          "<td class=\"task_field\">" + item.priority + "</td>\n" +
           "</tr>\n" +
 
           "</table>\n" +
@@ -295,6 +316,52 @@
         projects_tree_view_update(item);
 
         return new_title;
+      }
+
+      function task_ws_up_click(item)
+      {
+        start_ajax(
+          "avgproject.pl?action=4" +
+          "&id=" + item.id,
+          function (r, args)
+          {
+            var par = item.parent;
+
+            eval("var resp = { " + r.responseText + " }");
+
+            item.priority = resp.priority;
+
+            tree_store_unlink(item, item);
+            tree_store_add(app.tasks, par, item, app.cmp);
+
+            function for_each_sibling(parent, f, arg)
+            {
+              f(parent, arg); for_each_sibling_sibling(parent,f,arg);
+            }
+
+            function for_each_sibling_sibling(parent, f, arg)
+            {
+              for (var i = parent.first; i; i = i.next)
+              {
+                f(i); for_each_sibling_sibling(i,f,arg);
+              }
+            }
+
+            var bottom_node = tree_store_get_bottom_node(item);
+
+            var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+            for_each_sibling(item, function (i)
+            {
+              var table = document.getElementById("table_item_" + i.id);
+
+              table.remove();
+
+              table_bottom.parentNode.insertBefore(table, table_bottom);
+            });
+          },
+          { }
+        );
       }
 
       function tasks_get_task_by_id(id)

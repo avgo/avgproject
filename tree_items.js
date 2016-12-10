@@ -54,17 +54,18 @@ function gen_html_for_node(i)
     );
 }
 
-function tree_store_add(tree, parent_node, new_node)
+function tree_store_add(tree, parent_node, new_node, cmp)
 {
   var next;
 
-  for (next = parent_node.first; next; next = next.next)
+  if (cmp)
   {
-    /*
-    if (new_node.id >= next.id)
-      break;
-    */
+    for (next = parent_node.first; next; next = next.next)
+      if (!cmp(new_node,next))
+        break;
   }
+  else
+    next = null;
 
   if (next)
   {
@@ -92,7 +93,29 @@ function tree_store_add(tree, parent_node, new_node)
   return prev;
 }
 
-function tree_store_build_tree(tree_items, offset_step)
+function tree_store_unlink(begin, end)
+{
+  var par  = begin.parent;
+
+  var prev = begin.prev;
+
+  var next = end.next;
+
+  if (prev)
+    prev.next = next;
+  else
+    par.first = next;
+
+  if (next)
+    next.prev = prev;
+  else
+    par.last  = prev;
+
+  begin.prev = null;
+  end.next = null;
+}
+
+function tree_store_build_tree(tree_items, offset_step, cmp)
 {
   /*
       Массив на самом деле делится на две части: в верхней части уже
@@ -142,7 +165,7 @@ function tree_store_build_tree(tree_items, offset_step)
 
       if (bt_parent_node)
       {
-        tree_store_add(b_tree, bt_parent_node, nbtn);
+        tree_store_add(b_tree, bt_parent_node, nbtn, cmp);
 
         // отвязать nbtn от старого места
 
