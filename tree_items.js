@@ -56,20 +56,20 @@ function gen_html_for_node(i)
 
 function tree_store_add(tree, parent_node, new_node)
 {
-  var node;
+  var next;
 
-  for (node = parent_node.first; node; node = node.next)
+  for (next = parent_node.first; next; next = next.next)
   {
     /*
-    if (new_node.id >= node.id)
+    if (new_node.id >= next.id)
       break;
     */
   }
 
-  if (node)
+  if (next)
   {
-    prev = node.prev;
-    node.prev = new_node;
+    prev = next.prev;
+    next.prev = new_node;
   }
   else
   {
@@ -83,7 +83,7 @@ function tree_store_add(tree, parent_node, new_node)
     parent_node.first = new_node;
 
   new_node.prev = prev;
-  new_node.next = node;
+  new_node.next = next;
 
   new_node.parent = parent_node;
 
