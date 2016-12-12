@@ -45,6 +45,20 @@
     .task_btn:hover {
       color: #66FFFF;
     }
+    .toolkit_dtm_picker {
+      background-color: rgb(255, 255, 255);
+      display: none;
+      position: absolute;
+      left: 600px;
+      top: 230px;
+      padding: 8px;
+      height: 200px;
+      width: 300px;
+      border-width: 1px;
+      border-color: #000000;
+      border-style: solid;
+      border-radius: 6px;
+    }
     </style>
     <script src="/tree_items.js"></script>
     <script>
@@ -93,6 +107,14 @@
       function on_load()
       {
         get_tasks(app);
+      }
+
+      function pad(n)
+      {
+        if (n < 10)
+          return "0" + n;
+        else
+          return n;
       }
 
       function projects_tree_view_item_new_subt_click(parent_node)
@@ -170,6 +192,10 @@
             "onclick=\"task_ws_up_click(" + item_obj_str + ");\"" +
           ">\n" +
 
+          "<table>" +
+          "<tr>" +
+          "<td>" +
+
           "<table>\n" +
 
           "<tr>\n" +
@@ -193,6 +219,13 @@
           "</tr>\n" +
 
           "</table>\n" +
+
+          "</td>" +
+
+          "<td id=\"task_ws_work_log\" style=\"vertical-align: top;\">" +
+          "</td>" +
+          "</tr>" +
+          "</table>" +
           ""
         ;
 
@@ -204,6 +237,17 @@
         );
 
         task.appendChild(elem_textarea);
+
+        var work_log = document.getElementById("task_ws_work_log");
+
+        var dtmp = toolkit_datetime_picker(
+          "task_ws_task_dtmp",
+          "task_ws_task_dtmp_text_get",
+          "task_ws_task_dtmp_text_set",
+          "{ id: " + item.id + " }"
+        );
+
+        work_log.appendChild(dtmp);
       }
 
       function projects_tree_view_update(node)
@@ -222,9 +266,8 @@
         {
           is_new = true;
           table = document.createElement("table");
+          table.id = "table_item_" + node.id;
         }
-
-        table.id = "table_item_" + node.id;
 
         table.innerHTML = gen_html_for_node(node);
 
@@ -288,6 +331,20 @@
         item.description = new_text;
 
         return new_text;
+      }
+
+      function task_ws_task_dtmp_text_get(args)
+      {
+        var d = new Date();
+
+        var item = tasks_get_task_by_id(args.id);
+
+        return item.dtm_created.replace(" ","T");
+      }
+
+      function task_ws_task_dtmp_text_set(title_get, new_text, args)
+      {
+        alert(new_text);
       }
 
       function task_ws_task_title_get(args)
@@ -371,6 +428,310 @@
         eval("item = app.tasks.items.item_" + id + ";");
 
         return item;
+      }
+
+      var toolkit_datetime_picker_scroll = function(e)
+      {
+        if (e.deltaY < 0)
+          ++this.value;
+        else if (e.deltaY > 0)
+          --this.value;
+      };
+
+      function toolkit_datetime_picker(dtmp_id, text_get, text_set, args)
+      {
+        var dtmp = document.createElement("span");
+
+        var dtmp_dtmp = document.createElement("span");
+
+        dtmp_dtmp.id = dtmp_id;
+
+        dtmp_dtmp.setAttribute("onclick",
+          "toolkit_datetime_picker_onclick('" +
+          dtmp_id + "','" + text_get + "','" + text_set + "','" + args + "');"
+        );
+
+        var title;
+
+        eval("title = " + text_get + "(" + args + ");");
+
+        dtmp_dtmp.appendChild(document.createTextNode(title));
+
+        dtmp.appendChild(dtmp_dtmp);
+
+        var popup_win = document.createElement("div");
+
+        popup_win.className = "toolkit_dtm_picker";
+
+        popup_win.id = dtmp_id + "_popup_win";
+
+        var btn_close = document.createElement("input");
+
+        btn_close.className  = "small_button";
+        btn_close.type       = "button";
+        btn_close.value      = "close";
+
+        btn_close.setAttribute("onclick",
+          "toolkit_datetime_picker_close_popup(" +
+          "'" + popup_win.id + "'" +
+          ");"
+        );
+
+        popup_win.appendChild(btn_close);
+
+        var btn_set = document.createElement("input");
+
+        btn_set.className  = "small_button";
+        btn_set.type       = "button";
+        btn_set.value      = "set";
+
+        btn_set.setAttribute("onclick",
+          "toolkit_datetime_picker_set(" +
+          "'" + dtmp_id + "'," +
+          "'" + text_set + "'," +
+          "'" + args + "'" +
+          ");"
+        );
+
+        popup_win.appendChild(btn_set);
+
+        popup_win.appendChild(document.createElement("br"));
+
+        var year_pick = document.createElement("input");
+
+        year_pick.id = dtmp_id + "_year_pick";
+        year_pick.type = "text";
+        year_pick.value = "YYYY";
+        year_pick.style.setProperty("width", "45px");
+        year_pick.style.setProperty("text-align", "center");
+        year_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(year_pick);
+
+        popup_win.appendChild(document.createTextNode("-"));
+
+        var month_pick = document.createElement("input");
+
+        month_pick.id = dtmp_id + "_month_pick";
+        month_pick.type = "text";
+        month_pick.value = "MM";
+        month_pick.style.setProperty("width", "30px");
+        month_pick.style.setProperty("text-align", "center");
+        month_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(month_pick);
+
+        popup_win.appendChild(document.createTextNode("-"));
+
+        var day_pick = document.createElement("input");
+
+        day_pick.id = dtmp_id + "_day_pick";
+        day_pick.type = "text";
+        day_pick.value = "DD";
+        day_pick.style.setProperty("width", "30px");
+        day_pick.style.setProperty("text-align", "center");
+        day_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(day_pick);
+
+        popup_win.appendChild(document.createTextNode(" "));
+
+        var hours_pick = document.createElement("input");
+
+        hours_pick.id = dtmp_id + "_hours_pick";
+        hours_pick.type = "text";
+        hours_pick.value = "HH";
+        hours_pick.style.setProperty("width", "30px");
+        hours_pick.style.setProperty("text-align", "center");
+        hours_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(hours_pick);
+
+        popup_win.appendChild(document.createTextNode(":"));
+
+        var minutes_pick = document.createElement("input");
+
+        minutes_pick.id = dtmp_id + "_minutes_pick";
+        minutes_pick.type = "text";
+        minutes_pick.value = "MM";
+        minutes_pick.style.setProperty("width", "30px");
+        minutes_pick.style.setProperty("text-align", "center");
+        minutes_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(minutes_pick);
+
+        popup_win.appendChild(document.createTextNode(":"));
+
+        var seconds_pick = document.createElement("input");
+
+        seconds_pick.id = dtmp_id + "_seconds_pick";
+        seconds_pick.type = "text";
+        seconds_pick.value = "SS";
+        seconds_pick.style.setProperty("width", "30px");
+        seconds_pick.style.setProperty("text-align", "center");
+        seconds_pick.addEventListener("wheel", toolkit_datetime_picker_scroll);
+
+        popup_win.appendChild(seconds_pick);
+
+        popup_win.appendChild(document.createElement("br"));
+
+        var date_pick = document.createElement("span");
+
+        date_pick.id = dtmp_id + "_dp";
+
+        popup_win.appendChild(date_pick);
+
+        dtmp.appendChild(popup_win);
+
+        return dtmp;
+      }
+
+      function toolkit_datetime_picker_close_popup(dtmp_popup_id)
+      {
+        var dtmp_popup = document.getElementById(dtmp_popup_id);
+
+        dtmp_popup.style.setProperty("display", "none");
+      }
+
+      function toolkit_datetime_picker_dp_update(dp,d)
+      {
+        function date_to_str(d)
+        {
+          var wdd = [
+            "понедельник",
+            "вторник",
+            "среда",
+            "четверг",
+            "пятница",
+            "суббота",
+            "воскресенье"
+          ];
+
+          wdd = [
+            "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"
+          ];
+
+          return "" +
+            pad(d.getFullYear()) + "-" +
+            pad(d.getMonth()+1) + "-" +
+            pad(d.getDate()) + " " +
+            pad(d.getHours()) + ":" +
+            pad(d.getMinutes()) + ":" +
+            pad(d.getSeconds()) + ", " +
+            d.getTime() + ", " + wdd[(d.getDay()+6)%7]
+          ;
+        }
+
+        while(dp.firstChild)
+          dp.removeChild(dp.firstChild);
+
+        var t = document.createElement("table");
+
+        t.border = 0;
+
+        var dtm_min = new Date(d.getFullYear(),d.getMonth(),1);
+
+        var dtm_min_time = dtm_min.getTime() - ((dtm_min.getDay() + 6) % 7)*24*60*60*1000;
+
+        for (var i = 0; i < 6; ++i)
+        {
+          var tr = document.createElement("tr");
+
+          for (var j = 0; j < 7; ++j)
+          {
+            var td = document.createElement("td");
+
+            dtm_min.setTime(dtm_min_time);
+
+            var btn = document.createElement("input");
+
+            btn.type   = "button";
+            btn.value  = dtm_min.getDate();
+
+            btn.style.setProperty("width","25px");
+            btn.style.setProperty("text-align","right");
+            btn.style.setProperty("background-color","#ffffff");
+            btn.style.setProperty("border-width", "1px");
+            btn.style.setProperty("padding", "0px 0px 0px 0px");
+
+            btn.setAttribute("onclick", "toolkit_datetime_picker_pick_date('" + dp.id + "'," + dtm_min.getFullYear() + "," + dtm_min.getMonth() + "," + dtm_min.getDate() + ");");
+
+            td.appendChild(btn);
+
+            tr.appendChild(td);
+
+            dtm_min_time += 24*60*60*1000;
+          }
+
+          t.appendChild(tr);
+        }
+
+        dp.appendChild(t);
+      }
+
+      function toolkit_datetime_picker_onclick(dtmp_id, text_get, text_set, args)
+      {
+        var dtmp = document.getElementById(dtmp_id);
+
+        var dtmp_popup = document.getElementById(dtmp_id + "_popup_win");
+
+        var text; eval("text = " + text_get + "(" + args + ");");
+        var d = new Date(text);
+
+        var year_pick = document.getElementById(dtmp_id + "_year_pick");
+        year_pick.value = d.getFullYear();
+
+        var month_pick = document.getElementById(dtmp_id + "_month_pick");
+        month_pick.value = d.getMonth() + 1;
+
+        var day_pick = document.getElementById(dtmp_id + "_day_pick");
+        day_pick.value = d.getDate();
+
+        var hours_pick = document.getElementById(dtmp_id + "_hours_pick");
+        hours_pick.value = d.getHours();
+
+        var minutes_pick = document.getElementById(dtmp_id + "_minutes_pick");
+        minutes_pick.value = d.getMinutes();
+
+        var seconds_pick = document.getElementById(dtmp_id + "_seconds_pick");
+        seconds_pick.value = d.getSeconds();
+
+        var dtmp_dp = document.getElementById(dtmp_id + "_dp");
+
+        toolkit_datetime_picker_dp_update(dtmp_dp,d);
+
+        var br = dtmp.getBoundingClientRect();
+
+        dtmp_popup.style.setProperty("left", br.left + "px");
+
+        dtmp_popup.style.setProperty("top", (br.top + 20) + "px");
+
+        dtmp_popup.style.setProperty("display", "block");
+      }
+
+      function toolkit_datetime_picker_pick_date(dtmp_id, year, month, day)
+      {
+      }
+
+      function toolkit_datetime_picker_set(dtmp_id, text_set, args)
+      {
+        var year_pick = document.getElementById(dtmp_id + "_year_pick");
+        var month_pick = document.getElementById(dtmp_id + "_month_pick");
+        var day_pick = document.getElementById(dtmp_id + "_day_pick");
+        var hours_pick = document.getElementById(dtmp_id + "_hours_pick");
+        var minutes_pick = document.getElementById(dtmp_id + "_minutes_pick");
+        var seconds_pick = document.getElementById(dtmp_id + "_seconds_pick");
+
+        var new_title =
+          year_pick.value + "-" +
+          month_pick.value + "-" +
+          day_pick.value + "T" +
+          hours_pick.value + ":" +
+          minutes_pick.value + ":" +
+          seconds_pick.value
+        ;
+
+        eval(text_set + "('','" + new_title + "'," + args + ");");
       }
 
       function toolkit_label(label_id, title_get, title_set, args)
