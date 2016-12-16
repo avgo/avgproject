@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Testing HTML 5 toolkit.</title>
+    <link rel="stylesheet" type="text/css" href="./toolkit.css"/>
+    <script src="toolkit.js"></script>
+    <script>
+      var app = {
+        text: [ ],
+      };
+
+      var get_text = function(args)
+      {
+        return app.text[args];
+      }
+
+      var set_text = function(text, args)
+      {
+        app.text[args] = text;
+
+        return text;
+      }
+
+      function on_load()
+      {
+        var main = document.getElementById("main");
+
+        for (var i = 0; i < 10; ++i)
+        {
+          app.text[i] = "text " + (i+1);
+
+          main.appendChild(toolkit_label(
+            get_text,
+            set_text,
+            i
+          ).el_main);
+
+          if ((i%3) == 2)
+            main.appendChild(document.createElement("br"));
+        }
+
+        main.appendChild(document.createElement("br"));
+
+        main.appendChild(document.createElement("br"));
+
+        var t = document.createElement("table");
+
+        t.style = "width: 100%; background-color: #ffffff; border-width: 0px; border-collapse: collapse;";
+
+        var el_count = 3;
+
+        var cells_count = el_count * 2 + 1;
+
+        for (var i = 0; i < cells_count; ++i)
+        {
+          var tr = document.createElement("tr");
+
+          if ( i % 2 )
+          {
+          }
+          else
+          {
+            tr.style = "height: 300px;";
+          }
+
+          var td = document.createElement("td");
+
+          if ( i % 2 )
+          {
+            td.style = "border-width: 1px; border-style: solid;";
+
+            td.appendChild(toolkit_datetime_picker().el_main);
+          }
+          else
+          {
+            td.style = "border-width: 0px; border-style: none;";
+          }
+
+          tr.appendChild(td);
+
+          t.appendChild(tr);
+        }
+
+        main.appendChild(t);
+      }
+    </script>
+  </head>
+  <body onload="on_load()">
+    <div style="background-color: #ffcccc;" id="main"></div>
+  </body>
+</html>
+
+<!-- vim: set expandtab ts=2 : //-->

@@ -1,0 +1,23 @@
+
+.toolkit_dtm_picker {
+  background-color: rgb(255, 255, 255);
+  display: none;
+  position: absolute;
+  left: 600px;
+  top: 230px;
+  padding: 8px;
+  height: 270px;
+  width: 300px;
+  border-width: 1px;
+  border-color: #000000;
+  border-style: solid;
+  border-radius: 6px;
+}
+
+.toolkit_small_button {
+  font-size: 11px;
+  border: 0px solid rgb(255, 153, 153);
+  background-color: transparent;
+  cursor: pointer;
+  color: rgb(102, 102, 255);
+}
