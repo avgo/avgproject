@@ -52,7 +52,7 @@ function min_max_check(el,min,max)
     el.value = min;
 }
 
-function toolkit_datetime_picker()
+function toolkit_datetime_picker(get_value, set_value)
 {
   var el = {
     create: function()
@@ -73,7 +73,12 @@ function toolkit_datetime_picker()
           x.popup_win.style.setProperty("left", c.left + "px");
           x.popup_win.style.setProperty("top", (c.top+x.el_main.offsetHeight) + "px");
 
-          var d = new Date();
+          var d;
+
+          if (get_value)
+            d = new Date(get_value());
+
+          if (!d) d = new Date();
 
           x.year_pick.value = d.getFullYear();
           x.month_pick.value = d.getMonth() + 1;
@@ -487,11 +492,20 @@ function toolkit_datetime_picker()
 
       t.appendChild(tr);
 
+      dtm.setTime(dtm_time);
+
+      console.log(
+        "whe're begin at " +
+        dtm.getFullYear() + "-" + (dtm.getMonth()+1) + "-" + dtm.getDate() + " " +
+        dtm.getHours() + "-" + dtm.getMinutes() + "-" + dtm.getSeconds() + "\n"
+      );
+
       for (var i = 0; i < weeks_count; ++i)
       {
         tr = document.createElement("tr");
 
         var cur_month;
+        var cur_day;
 
         for (var j = 0; j < 7; ++j)
         {
@@ -500,18 +514,19 @@ function toolkit_datetime_picker()
           dtm.setTime(dtm_time);
 
           cur_month = dtm.getMonth() + 1;
+          cur_day = dtm.getDate();
 
           var btn = document.createElement("input");
 
           btn.type   = "button";
-          btn.value  = dtm.getDate();
+          btn.value  = cur_day;
 
           btn.style.setProperty("width","25px");
           btn.style.setProperty("text-align","right");
 
           if (pick_m == cur_month)
           {
-            if (pick_d == btn.value)
+            if (pick_d == cur_day)
             {
               btn.style.setProperty("background-color","#ffaaaa");
               btn.style.setProperty("background-color","#FF8F8F");
@@ -548,13 +563,63 @@ function toolkit_datetime_picker()
 
               obj.update_calendar();
             };
-          })(this,dtm.getFullYear(),cur_month,dtm.getDate()));
+          })(this,dtm.getFullYear(),cur_month,cur_day));
 
           td.appendChild(btn);
 
           tr.appendChild(td);
 
           dtm_time += 24*60*60*1000;
+
+          dtm.setTime(dtm_time);
+
+          if (dtm.getDate() == cur_day)
+          {
+            var a = 24*60*60*1000 - (
+              dtm.getHours()*60*60 +
+              dtm.getMinutes()*60 +
+              dtm.getSeconds()) * 1000
+            ;
+
+            var msg =
+              "перебрали дни и к\n" +
+              dtm.getFullYear() + "-" + (dtm.getMonth()+1) + "-" + dtm.getDate() + " " +
+              dtm.getHours() + ":" + dtm.getMinutes() + ":" + dtm.getSeconds() + "\n" +
+              "добавили " + a
+            ;
+
+            alert(msg);
+
+            dtm_time += a;
+
+            dtm.setTime(dtm_time);
+          }
+
+          var m_yy = dtm.getFullYear();
+          var m_mo = dtm.getMonth()+1;
+          var m_dd = dtm.getDate();
+          var m_hh = dtm.getHours();
+          var m_mm = dtm.getMinutes();
+          var m_ss = dtm.getSeconds();
+
+          if (m_hh != 0 || m_mm != 0 || m_ss != 0)
+          {
+            var a = (
+              m_hh*60*60 +
+              m_mm*60 +
+              m_ss) * 1000;
+
+            var msg =
+              "Вот накопилось лишнее время тут\n" +
+              "от " + m_yy + "-" + m_mo + "-" + m_dd + " " + m_hh + ":" + m_mm + ":" + m_ss + "\n" +
+              "мы отнимем " + a;
+
+            alert(msg);
+
+            dtm_time -= a;
+
+            dtm.setTime(dtm_time);
+          }
         }
 
         t.appendChild(tr);
