@@ -442,79 +442,48 @@ function toolkit_datetime_picker(get_value, set_value)
 
       t.border = 0;
 
-      var pick_y = this.year_pick.value;
-      var pick_m = this.month_pick.value;
-      var pick_d = this.day_pick.value;
+      var pick_y = parseInt(this.year_pick.value, 10);
+      var pick_m = parseInt(this.month_pick.value, 10);
+      var pick_d = parseInt(this.day_pick.value, 10);
 
-      var dtm = new Date(pick_y, pick_m-1, 1);
+      var w_d_labels = [ "пн", "вт", "ср", "чт", "пт", "сб", "вс" ];
 
-      var dtm_time = dtm.getTime() - ((dtm.getDay() + 6) % 7 + 7) * 24*60*60*1000;
-
-      dtm = new Date(pick_y, pick_m-1, days_in_month(pick_y, pick_m));
-
-      var dtm_e = dtm.getTime() + (6 - (dtm.getDay() + 6) % 7 + 7) * 24*60*60*1000;
-
-      var weeks_count = (dtm_e - dtm_time) / (7*24*60*60*1000);
-
-      var tr; var td;
+      var tr, td;
 
       tr = document.createElement("tr");
 
-      var ta = "center";
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("пн")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("вт")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("ср")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("чт")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("пт")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("сб")); tr.appendChild(td);
-
-      td = document.createElement("td");
-      td.style.setProperty("text-align", ta);
-      td.appendChild(document.createTextNode("вс")); tr.appendChild(td);
+      for (var i = 0; i < 7; ++i)
+      {
+        td = document.createElement("td");
+        td.appendChild(document.createTextNode(w_d_labels[i]));
+        tr.appendChild(td);
+      }
 
       t.appendChild(tr);
 
-      dtm.setTime(dtm_time);
+      dtm = new Date(pick_y,pick_m-1,1);
 
-      console.log(
-        "whe're begin at " +
-        dtm.getFullYear() + "-" + (dtm.getMonth()+1) + "-" + dtm.getDate() + " " +
-        dtm.getHours() + "-" + dtm.getMinutes() + "-" + dtm.getSeconds() + "\n"
-      );
+      cal.appendChild(document.createElement("br"));
 
-      for (var i = 0; i < weeks_count; ++i)
+      // (a-1+max+b)%max+1
+
+      // b=-1, max=12, (a+10)%12+1
+
+      var prev_month = (pick_m + 10) % 12 + 1;
+
+      var cur_month = prev_month;
+      var cur_year = cur_month == 12 ? pick_y - 1 : pick_y;
+      var cur_dim = days_in_month(cur_year, cur_month);
+
+      var cur_day = (cur_dim - (dtm.getDay()+6) % 7 - 7) % cur_dim + 1;
+
+      for (var i = 0; i < 8; ++i)
       {
         tr = document.createElement("tr");
 
-        var cur_month;
-        var cur_day;
-
-        for (var j = 0; j < 7; ++j)
+        for (var dow = 0; dow < 7; ++dow)
         {
           td = document.createElement("td");
-
-          dtm.setTime(dtm_time);
-
-          cur_month = dtm.getMonth() + 1;
-          cur_day = dtm.getDate();
 
           var btn = document.createElement("input");
 
@@ -527,27 +496,12 @@ function toolkit_datetime_picker(get_value, set_value)
           if (pick_m == cur_month)
           {
             if (pick_d == cur_day)
-            {
-              btn.style.setProperty("background-color","#ffaaaa");
-              btn.style.setProperty("background-color","#FF8F8F");
               btn.style.setProperty("background-color","#FF7575");
-            }
             else
-            {
-              var day = (dtm.getDay() + 6) % 7 + 1;
-
-              if (day == 6 || day == 7)
-              {
-                btn.style.setProperty("background-color","#FFCFCF");
-              }
-              else
-              {
-                btn.style.setProperty("background-color","#E4F2FF");
-                btn.style.setProperty("background-color","#BFE0FF");
-                btn.style.setProperty("background-color","#D6EBFF");
-                btn.style.setProperty("background-color","#CFE7FF");
-              }
-            }
+            if (dow == 5 || dow == 6)
+              btn.style.setProperty("background-color","#FFCFCF");
+            else
+              btn.style.setProperty("background-color","#CFE7FF");
           }
           else
             btn.style.setProperty("background-color","#ffffff");
@@ -557,69 +511,33 @@ function toolkit_datetime_picker(get_value, set_value)
 
           btn.addEventListener("click", (function(obj,y,m,d) {
             return function() {
-              obj.year_pick.value = y;
-              obj.month_pick.value = m;
-              obj.day_pick.value = d;
+              obj.year_pick.value   = y;
+              obj.month_pick.value  = m;
+              obj.day_pick.value    = d;
 
               obj.update_calendar();
             };
-          })(this,dtm.getFullYear(),cur_month,cur_day));
+          })(this,cur_year,cur_month,cur_day));
 
           td.appendChild(btn);
 
           tr.appendChild(td);
 
-          dtm_time += 24*60*60*1000;
-
-          dtm.setTime(dtm_time);
-
-          if (dtm.getDate() == cur_day)
+          if (cur_day == cur_dim)
           {
-            var a = 24*60*60*1000 - (
-              dtm.getHours()*60*60 +
-              dtm.getMinutes()*60 +
-              dtm.getSeconds()) * 1000
-            ;
+            if (cur_month == 12)
+            {
+              cur_month = 1;
+              ++cur_year;
+            }
+            else
+              ++cur_month;
 
-            var msg =
-              "перебрали дни и к\n" +
-              dtm.getFullYear() + "-" + (dtm.getMonth()+1) + "-" + dtm.getDate() + " " +
-              dtm.getHours() + ":" + dtm.getMinutes() + ":" + dtm.getSeconds() + "\n" +
-              "добавили " + a
-            ;
-
-            alert(msg);
-
-            dtm_time += a;
-
-            dtm.setTime(dtm_time);
+            cur_day = 1;
+            cur_dim = days_in_month(cur_year, cur_month);
           }
-
-          var m_yy = dtm.getFullYear();
-          var m_mo = dtm.getMonth()+1;
-          var m_dd = dtm.getDate();
-          var m_hh = dtm.getHours();
-          var m_mm = dtm.getMinutes();
-          var m_ss = dtm.getSeconds();
-
-          if (m_hh != 0 || m_mm != 0 || m_ss != 0)
-          {
-            var a = (
-              m_hh*60*60 +
-              m_mm*60 +
-              m_ss) * 1000;
-
-            var msg =
-              "Вот накопилось лишнее время тут\n" +
-              "от " + m_yy + "-" + m_mo + "-" + m_dd + " " + m_hh + ":" + m_mm + ":" + m_ss + "\n" +
-              "мы отнимем " + a;
-
-            alert(msg);
-
-            dtm_time -= a;
-
-            dtm.setTime(dtm_time);
-          }
+          else
+            ++cur_day;
         }
 
         t.appendChild(tr);
