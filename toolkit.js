@@ -52,7 +52,15 @@ function min_max_check(el,min,max)
     el.value = min;
 }
 
-function toolkit_datetime_picker(get_value, set_value)
+function pad(n)
+{
+  if (n < 10)
+    return "0" + n;
+  else
+    return n;
+}
+
+function toolkit_datetime_picker(get_value, set_value, args)
 {
   var el = {
     create: function()
@@ -76,7 +84,11 @@ function toolkit_datetime_picker(get_value, set_value)
           var d;
 
           if (get_value)
-            d = new Date(get_value());
+          {
+            var v = get_value(args);
+
+            d = v ? new Date(v) : new Date();
+          }
 
           if (!d) d = new Date();
 
@@ -125,6 +137,16 @@ function toolkit_datetime_picker(get_value, set_value)
       {
         return function()
         {
+          if (set_value)
+            set_value(
+              pad(x.year_pick.value) + "-" +
+              pad(x.month_pick.value) + "-" +
+              pad(x.day_pick.value) + "T" +
+              pad(x.hours_pick.value) + ":" +
+              pad(x.minutes_pick.value) + ":" +
+              pad(x.seconds_pick.value),
+              args
+            );
           x.popup_win.style.setProperty("display", "none");
         };
       })(this));

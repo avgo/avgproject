@@ -8,7 +8,18 @@
     <script>
       var app = {
         text: [ ],
+        dates: [ ],
       };
+
+      var get_date = function(args)
+      {
+        return app.dates[args];
+      }
+
+      var set_date = function(text, args)
+      {
+        app.dates[args] = text;
+      }
 
       var get_text = function(args)
       {
@@ -52,7 +63,7 @@
 
         var cells_count = el_count * 2 + 1;
 
-        for (var i = 0; i < cells_count; ++i)
+        for (var i = 0, j = 0; i < cells_count; ++i)
         {
           var tr = document.createElement("tr");
 
@@ -71,11 +82,14 @@
             td.style = "border-width: 1px; border-style: solid;";
 
             td.appendChild(toolkit_datetime_picker(
-              function ()
+              /* function ()
               {
                 return "2005-10-11T10:02:33";
-              }
+              } */
+              get_date, set_date, j
             ).el_main);
+
+            ++j;
           }
           else
           {
