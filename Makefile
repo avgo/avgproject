@@ -31,5 +31,6 @@ install:
 		fi \
 	done
 	
-	cp -vfu avgproject* /usr/lib/cgi-bin
-	cp -vfu tree_items.js /var/www/html
+	./avgp-compile.pl avgproject.template.main.html /usr/lib/cgi-bin/avgproject.template.main.html
+	cp -vfu avgproject.pl /usr/lib/cgi-bin
+	cp -vfu toolkit.css toolkit.js tree_items.js /var/www/html
