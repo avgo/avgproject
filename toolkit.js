@@ -38,6 +38,19 @@ function elem_coords(e) {
   };
 }
 
+function for_each_sibling(parent, f, arg)
+{
+  f(parent, arg); for_each_sibling_s(parent,f,arg);
+}
+
+function for_each_sibling_s(parent, f, arg)
+{
+  for (var i = parent.first; i; i = i.next)
+  {
+    f(i); for_each_sibling_s(i,f,arg);
+  }
+}
+
 function min_max_check(el,min,max)
 {
   el.value = el.value.replace(/[^0-9]/g, '');

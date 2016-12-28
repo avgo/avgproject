@@ -171,7 +171,49 @@
           item
         ).el_main);
 
-        // Up here
+        task.appendChild(document.createElement("br"));
+
+        var btn_up = document.createElement("button");
+
+        btn_up.className = "toolkit_small_button";
+        btn_up.appendChild(document.createTextNode("up"));
+        btn_up.addEventListener("click", (function(item)
+        {
+          return function ()
+          {
+            start_ajax(
+              "avgproject.pl?action=4" +
+              "&id=" + item.id,
+              function (r, args)
+              {
+                var par = item.parent;
+
+                eval("var resp = { " + r.responseText + " }");
+
+                item.priority = resp.priority;
+
+                tree_store_unlink(item, item);
+                tree_store_add(app.tasks, par, item, app.cmp);
+
+                var bottom_node = tree_store_get_bottom_node(item);
+
+                var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+                for_each_sibling(item, function (i)
+                {
+                  var table = document.getElementById("table_item_" + i.id);
+
+                  table.remove();
+
+                  table_bottom.parentNode.insertBefore(table, table_bottom);
+                });
+              },
+              { }
+            );
+          };
+        })(item));
+
+        task.appendChild(btn_up);
 
         /*
         task.innerHTML =
@@ -324,52 +366,6 @@
       function task_ws_task_dtmp_text_set(title_get, new_text, args)
       {
         alert(new_text);
-      }
-
-      function task_ws_up_click(item)
-      {
-        start_ajax(
-          "avgproject.pl?action=4" +
-          "&id=" + item.id,
-          function (r, args)
-          {
-            var par = item.parent;
-
-            eval("var resp = { " + r.responseText + " }");
-
-            item.priority = resp.priority;
-
-            tree_store_unlink(item, item);
-            tree_store_add(app.tasks, par, item, app.cmp);
-
-            function for_each_sibling(parent, f, arg)
-            {
-              f(parent, arg); for_each_sibling_sibling(parent,f,arg);
-            }
-
-            function for_each_sibling_sibling(parent, f, arg)
-            {
-              for (var i = parent.first; i; i = i.next)
-              {
-                f(i); for_each_sibling_sibling(i,f,arg);
-              }
-            }
-
-            var bottom_node = tree_store_get_bottom_node(item);
-
-            var table_bottom = document.getElementById("table_item_" + bottom_node.id);
-
-            for_each_sibling(item, function (i)
-            {
-              var table = document.getElementById("table_item_" + i.id);
-
-              table.remove();
-
-              table_bottom.parentNode.insertBefore(table, table_bottom);
-            });
-          },
-          { }
-        );
       }
 
       function tasks_get_task_by_id(id)
