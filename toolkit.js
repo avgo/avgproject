@@ -78,9 +78,27 @@ function toolkit_datetime_picker(get_value, set_value, args)
   var el = {
     create: function()
     {
+      var cur_val;
+
+      if (get_value)
+      {
+        var v = get_value(args);
+
+        cur_val = v ? new Date(v) : new Date();
+      }
+
+      if (!cur_val) cur_val = new Date();
+
+      this.current_value = cur_val;
+
       this.el_main = document.createElement("span");
 
       this.el_button = document.createElement("button");
+
+      this.el_button.style.setProperty("border-width", "0px");
+      this.el_button.style.setProperty("background-color", "transparent");
+      this.el_button.style.setProperty("cursor", "pointer");
+      this.el_button.style.setProperty("padding", "0");
 
       this.el_main.appendChild(this.el_button);
 
@@ -94,29 +112,20 @@ function toolkit_datetime_picker(get_value, set_value, args)
           x.popup_win.style.setProperty("left", c.left + "px");
           x.popup_win.style.setProperty("top", (c.top+x.el_main.offsetHeight) + "px");
 
-          var d;
+          var d = x.current_value;
 
-          if (get_value)
-          {
-            var v = get_value(args);
-
-            d = v ? new Date(v) : new Date();
-          }
-
-          if (!d) d = new Date();
-
-          x.year_pick.value = d.getFullYear();
-          x.month_pick.value = d.getMonth() + 1;
-          x.day_pick.value = d.getDate();
-          x.hours_pick.value = d.getHours();
-          x.minutes_pick.value = d.getMinutes();
-          x.seconds_pick.value = d.getSeconds();
+          x.year_pick.value     = d.getFullYear();
+          x.month_pick.value    = d.getMonth() + 1;
+          x.day_pick.value      = d.getDate();
+          x.hours_pick.value    = d.getHours();
+          x.minutes_pick.value  = d.getMinutes();
+          x.seconds_pick.value  = d.getSeconds();
 
           x.update_calendar();
         };
       })(this));
 
-      this.el_button.appendChild(document.createTextNode("dtm_picker"));
+      this.update_btn_value();
 
       var popup_win = document.createElement("div");
 
@@ -151,6 +160,7 @@ function toolkit_datetime_picker(get_value, set_value, args)
         return function()
         {
           if (set_value)
+          {
             set_value(
               pad(x.year_pick.value) + "-" +
               pad(x.month_pick.value) + "-" +
@@ -160,6 +170,23 @@ function toolkit_datetime_picker(get_value, set_value, args)
               pad(x.seconds_pick.value),
               args
             );
+
+            var cv;
+
+            if (get_value)
+            {
+              var v = get_value(args);
+
+              cv = v ? new Date(v) : new Date();
+            }
+
+            if (!cv) cv = new Date();
+
+            x.current_value = cv;
+
+            x.update_btn_value();
+          }
+
           x.popup_win.style.setProperty("display", "none");
         };
       })(this));
@@ -464,6 +491,23 @@ function toolkit_datetime_picker(get_value, set_value, args)
       min_max_check(this.day_pick, 1, days_in_month(
         this.year_pick.value,
         this.month_pick.value
+      ));
+    },
+    update_btn_value: function()
+    {
+      var d = this.current_value;
+      var b = this.el_button;
+
+      while (b.firstChild)
+        b.removeChild(b.firstChild);
+
+      b.appendChild(document.createTextNode(
+        pad(d.getDate()) + "." +
+        pad(d.getMonth()+1) + "." +
+        pad(d.getFullYear()) + ", " +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds())
       ));
     },
     update_calendar: function()

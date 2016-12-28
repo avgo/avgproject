@@ -7,6 +7,7 @@ use utf8;
 
 
 sub main;
+sub span;
 
 
 
@@ -32,16 +33,26 @@ sub main {
 	$now_mon  += 1;
 	$now_year += 1900;
 
-	my $dtm_str = sprintf
+	my $dtm_str = span(sprintf(
 		"%02u.%02u.%04u %02u:%02u:%02u",
 		$now_mday, $now_mon, $now_year,
 		$now_hour, $now_min, $now_sec
+	),0);
+
+	my $val_color = "#FC7C7C";
+
+	my $cmd = sprintf
+		"git log HEAD^..HEAD --pretty=\"format:git SHA-1: %s, author date: %s, commiter date: %s, commit MSG: %s\"",
+		span("%H",1),
+		span("%ai",1),
+		span("%ci",1),
+		span("%s",1)
 	;
 
-	my $git_msg = `git log HEAD^..HEAD --pretty="format:git SHA-1: %H, author date: %ai, commiter date: %ci, commit MSG: %s"`;
+	my $git_msg = `$cmd`;
 
 	my $repl_html =
-		"<div style=\"background-color: #FFE1E1; color: #841818; font-size: 9pt; text-align: center;\">" .
+		"<div style=\"color: #5469FF; font-size: 9pt; text-align: center;\">" .
 		"install: $dtm_str, $git_msg" .
 		"</div>"
 	;
@@ -61,6 +72,14 @@ sub main {
 	print { $ii_fd } $repl_html, "\n";
 
 	close $ii_fd;
+}
+
+sub span {
+	(my $a, my $b) = @_;
+
+	$b = $b ? "\\" : "";
+
+	return "<span style=$b\"color: #FC7C7C;$b\">" . $a . "</span>";
 }
 
 

@@ -52,6 +52,18 @@
         },
       };
 
+      function dtm_fmt_def(d)
+      {
+        return (
+          pad(d.getDate()) + "." +
+          pad(d.getMonth()+1) + "." +
+          pad(d.getFullYear()) + ", " +
+          pad(d.getHours()) + ":" +
+          pad(d.getMinutes()) + ":" +
+          pad(d.getSeconds())
+        );
+      }
+
       function get_tasks()
       {
         start_ajax(
@@ -215,60 +227,73 @@
 
         task.appendChild(btn_up);
 
-        /*
-        task.innerHTML =
-          toolkit_label(
-            "task_ws_task_title",
-            "task_ws_task_title_get",
-            "task_ws_task_title_set",
-            "{ id: " + item.id + " }"
-          ) +
+        function create_tr(tbl, text, node)
+        {
+          var tr, td;
 
-          "<input " +
-            "type=\"button\" " +
-            "class=\"small_button\" " +
-            "value=\"up\" " +
-            "onclick=\"task_ws_up_click(" + item_obj_str + ");\"" +
-          ">\n" +
+          tr = document.createElement("tr");
 
-          "<table>" +
-          "<tr>" +
-          "<td>" +
+          td = document.createElement("td");
+          td.className = "task_field";
+          td.appendChild(document.createTextNode(text));
+          tr.appendChild(td);
 
-          "<table>\n" +
+          td = document.createElement("td");
+          td.className = "task_field";
 
-          "<tr>\n" +
-          "<td class=\"task_field\">ID:</td>\n" +
-          "<td class=\"task_field\">" + item.id + "</td>\n" +
-          "</tr>\n" +
+          for (var i = 0; i < node.length; ++i)
+          {
+            td.appendChild(node[i]);
+          }
 
-          "<tr>\n" +
-          "<td class=\"task_field\">Parent ID:</td>\n" +
-          "<td class=\"task_field\">" + item.parent_id + "</td>\n" +
-          "</tr>\n" +
+          tr.appendChild(td);
 
-          "<tr>\n" +
-          "<td class=\"task_field\">Дата создания:</td>\n" +
-          "<td class=\"task_field\">" + item.dtm_created + "</td>\n" +
-          "</tr>\n" +
+          tbl.appendChild(tr);
+        }
 
-          "<tr>\n" +
-          "<td class=\"task_field\">Приоритет:</td>\n" +
-          "<td class=\"task_field\">" + item.priority + "</td>\n" +
-          "</tr>\n" +
+        var tbl = document.createElement("table");
 
-          "</table>\n" +
+        create_tr(tbl, "ID:", [
+          document.createTextNode(item.id)
+        ]);
 
-          "</td>" +
+        create_tr(tbl, "Parent ID:", [
+          document.createTextNode(item.parent_id)
+        ]);
 
-          "<td id=\"task_ws_work_log\" style=\"vertical-align: top;\">" +
-          "</td>" +
-          "</tr>" +
-          "</table>" +
-          ""
-        ;
-        */
+        create_tr(tbl, "Дата создания:", [
+          toolkit_datetime_picker(
+            function(args)
+            {
+              return args.dtm_created.replace(" ", "T");
+            },
+            function(new_text, args)
+            {
+              new_text = new_text.replace("T", " ");
+              args.dtm_created = new_text;
+            },
+            item
+          ).el_main,
+        ]);
 
+        create_tr(tbl, "Приоритет:", [
+          document.createTextNode(
+            item.priority ? dtm_fmt_def(
+              new Date(item.priority.replace(" ","T"))
+            ) : ""
+          )
+        ]);
+
+        task.appendChild(tbl);
+
+        var elem_textarea = toolkit_memo_create(
+          "task_ws_task_description",
+          "task_ws_task_description_text_get",
+          "task_ws_task_description_text_set",
+          "{ id: " + item.id + " }"
+        );
+
+        task.appendChild(elem_textarea);
       }
 
       function projects_tree_view_update(node)
@@ -354,20 +379,6 @@
         return new_text;
       }
 
-      function task_ws_task_dtmp_text_get(args)
-      {
-        var d = new Date();
-
-        var item = tasks_get_task_by_id(args.id);
-
-        return item.dtm_created.replace(" ","T");
-      }
-
-      function task_ws_task_dtmp_text_set(title_get, new_text, args)
-      {
-        alert(new_text);
-      }
-
       function tasks_get_task_by_id(id)
       {
         var item;
@@ -396,7 +407,7 @@
 
         button.type       = "button";
         button.id         = memo_id + "_ok_btn";
-        button.className  = "small_button";
+        button.className  = "toolkit_small_button";
         button.value      = "ok";
 
         button.onclick = function ()
@@ -434,7 +445,7 @@
 
         button.type       = "button";
         button.id         = memo_id + "_btn";
-        button.className  = "small_button";
+        button.className  = "toolkit_small_button";
         button.value      = "edit";
 
         button.setAttribute("onclick",
