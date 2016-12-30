@@ -184,49 +184,93 @@
         ).el_main);
 
         task.appendChild(document.createElement("br"));
+        task.appendChild(document.createElement("br"));
 
         task.appendChild((function(){
-          var btn_up = document.createElement("button");
+          var tbl = document.createElement("table");
 
-          btn_up.className = "toolkit_small_button";
-          btn_up.appendChild(document.createTextNode("up"));
-          btn_up.addEventListener("click", (function(item)
-          {
-            return function ()
-            {
-              start_ajax(
-                "avgproject.pl?action=4" +
-                "&id=" + item.id,
-                function (r, args)
+          var arr = [
+            [
+              "up", (function(item)
+              {
+                return function ()
                 {
-                  var par = item.parent;
+                  start_ajax(
+                    "avgproject.pl?action=4" +
+                    "&id=" + item.id,
+                    function (r, args)
+                    {
+                      var par = item.parent;
 
-                  eval("var resp = { " + r.responseText + " }");
+                      eval("var resp = { " + r.responseText + " }");
 
-                  item.priority = resp.priority;
+                      item.priority = resp.priority;
 
-                  tree_store_unlink(item, item);
-                  tree_store_add(app.tasks, par, item, app.cmp);
+                      tree_store_unlink(item, item);
+                      tree_store_add(app.tasks, par, item, app.cmp);
 
-                  var bottom_node = tree_store_get_bottom_node(item);
+                      var bottom_node = tree_store_get_bottom_node(item);
 
-                  var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+                      var table_bottom = document.getElementById("table_item_" + bottom_node.id);
 
-                  for_each_sibling(item, function (i)
-                  {
-                    var table = document.getElementById("table_item_" + i.id);
+                      for_each_sibling(item, function (i)
+                      {
+                        var table = document.getElementById("table_item_" + i.id);
 
-                    table.remove();
+                        table.remove();
 
-                    table_bottom.parentNode.insertBefore(table, table_bottom);
-                  });
-                },
-                { }
-              );
-            };
-          })(item));
-          return btn_up;
+                        table_bottom.parentNode.insertBefore(table, table_bottom);
+                      });
+                    },
+                    { }
+                  );
+                };
+              })(item)
+            ],
+            [
+              "log work", (function(item)
+              {
+                return function()
+                {
+                  alert("log work for \"" + item.title + "\"!");
+                };
+              })(item)
+            ],
+          ];
+
+          var tr = document.createElement("tr");
+
+          for (var i = 0; i < arr.length; ++i)
+          {
+            (function(){
+              var td = document.createElement("td");
+
+              var text = arr[i][0];
+
+              var btn = document.createElement("button");
+
+              btn.style.setProperty("background-color", "rgb(215, 240, 255)");
+              btn.style.setProperty("border", "0px none");
+              btn.style.setProperty("color", "rgb(0, 118, 189)");
+              btn.style.setProperty("cursor", "pointer");
+              btn.style.setProperty("padding", "4px 40px");
+
+              btn.addEventListener("click", arr[i][1]);
+
+              btn.appendChild(document.createTextNode(text));
+
+              td.appendChild(btn);
+
+              tr.appendChild(td);
+            })();
+          }
+
+          tbl.appendChild(tr);
+
+          return tbl;
         })());
+
+        task.appendChild(document.createElement("br"));
 
         function create_tr(tbl, text, node)
         {
