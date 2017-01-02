@@ -186,6 +186,101 @@
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
 
+        function avgp_task_comment_log_work_data(id,task_id,type,comment,start,min,created,modified)
+        {
+          return {
+            comment:     function() { return comment; },
+
+            start:       function() { return start; },
+
+            get_id:      function() { return id; },
+
+            logged_min:  function() { return min; },
+
+            task_id:     function() { return task_id; },
+
+            x: function(args)
+            {
+              return start.replace(" ", "T");
+            },
+
+            y: function(new_text, args)
+            {
+              start = new_text.replace("T", " ");
+            },
+          };
+        }
+
+        function avgp_task_comment_log_work_view(handl)
+        {
+          var tbl = document.createElement("table");
+
+          tbl.style.setProperty("background-color", "#FFA1A1");
+          tbl.style.setProperty("border-radius", "8px");
+          tbl.style.setProperty("color", "#630000");
+          tbl.style.setProperty("width", "500px");
+
+          var tr, td;
+
+          tr = document.createElement("tr");
+
+          td = document.createElement("td");
+          td.style.setProperty("padding", "3px 3px 3px 10px");
+          td.style.setProperty("text-align", "center");
+          td.style.setProperty("width", "150px");
+          td.appendChild(toolkit_datetime_picker(
+            handl.x,
+            handl.y,
+            null
+          ).el_main);
+          tr.appendChild(td);
+
+          function mins_to_hr(lm)
+          {
+            var h = Math.floor(lm / 60);
+            var m = lm % 60;
+            if (0)
+              return pad(h) + ":" + pad(m);
+            else
+              return h + "h, " + m + "m";
+          }
+
+          td = document.createElement("td");
+          td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+          td.style.setProperty("font-size", "9pt");
+          td.style.setProperty("padding", "0px 15px");
+          td.appendChild(
+            toolkit_label(
+              function()
+              {
+                return handl.logged_min();
+              },
+              function()
+              {
+                return handl.logged_min();
+              }
+            ).el_main
+          );
+          tr.appendChild(td);
+
+          tbl.appendChild(tr);
+
+          tr = document.createElement("tr");
+
+          td = document.createElement("td");
+          td.setAttribute("colspan", "2");
+          td.style.setProperty("border-style", "solid");
+          td.style.setProperty("border-width", "1px 0px 0px");
+          td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
+          td.style.setProperty("padding", "5px");
+          td.appendChild(document.createTextNode(handl.comment()));
+          tr.appendChild(td);
+
+          tbl.appendChild(tr);
+
+          return tbl;
+        }
+
         task.appendChild((function(){
           var tbl = document.createElement("table");
 
@@ -228,11 +323,62 @@
               })(item)
             ],
             [
-              "log work", (function(item)
+              "log work", (function(task,item)
               {
                 return function()
                 {
-                  alert("log work for \"" + item.title + "\"!");
+                  var logwork_comment = "text";
+                  var logwork_min     = 60;
+
+                  start_ajax(
+                    "avgproject.pl?action=5" +
+                    "&ins=1" +
+                    "&kid=ai" +
+                    "&ftask_id=" + item.id +
+                    "&fcomment=" + encodeURIComponent(logwork_comment) +
+                    "&fstart=now" +
+                    "&fmin=" + logwork_min +
+                    "&fcreated=0" +
+                    "&fmodified=0" +
+                    "&select=id,start"
+                    ,
+                    function (r, args)
+                    {
+                      var resp;
+
+                      eval("resp = " + r.responseText);
+
+                      if (!resp.result)
+                        return;
+
+                      task.appendChild(document.createElement("br"));
+
+                      var el = resp.result[0];
+
+                      task.appendChild(
+                        avgp_task_comment_log_work_view(avgp_task_comment_log_work_data(
+                          el.id,
+                          item.id,
+                          el.type,
+                          el.comment,
+                          el.start,
+                          el.min,
+                          el.created,
+                          el.modified
+                        ))
+                      );
+                    },
+                    { }
+                  );
+                };
+              })(task,item)
+            ],
+            [
+              "close", (function(item)
+              {
+                return function()
+                {
+                  alert("close \"" + item.title + "\"!");
                 };
               })(item)
             ],
@@ -339,6 +485,48 @@
         );
 
         task.appendChild(elem_textarea);
+
+        start_ajax(
+          "avgproject.pl?action=6" +
+          "&fields=id,type,comment,start,min,created,modified" +
+          "&qtask_id=" + item.id
+          ,
+          function (r, args)
+          {
+            var resp;
+
+            eval("resp = " + r.responseText);
+
+            task.appendChild(document.createElement("br"));
+
+            task.appendChild(document.createTextNode("Коментарии " + resp.result.length + " штук."));
+
+            task.appendChild(document.createElement("br"));
+
+            var arr = resp.result;
+
+            for (var i = 0; i < arr.length; ++i)
+            {
+              var el = arr[i];
+
+              task.appendChild(document.createElement("br"));
+
+              task.appendChild(
+                avgp_task_comment_log_work_view(avgp_task_comment_log_work_data(
+                  el.id,
+                  item.id,
+                  el.type,
+                  el.comment,
+                  el.start,
+                  el.min,
+                  el.created,
+                  el.modified
+                ))
+              );
+            }
+          },
+          { }
+        );
       }
 
       function projects_tree_view_update(node)

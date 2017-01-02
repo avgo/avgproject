@@ -5,16 +5,34 @@ use utf8;
 
 use CGI;
 use Config::Simple;
+use Data::Dumper;
 use DBI;
 
 
 
 
+use constant {
+	INS_UPD_COMMENT  => 0,
+	INS_UPD_LOG_WORK => 1,
+
+	FIELD_NAME  => 0,
+	FIELD_VALUE => 1,
+	FIELD_RULE  => 2,
+};
+
+
+
+
+sub action_comments_ins_upd;
+sub action_comments_select;
 sub action_default;
 sub action_get_task_list;
+sub action_ins_upd;
+sub action_ins_upd_cgi;
 sub action_task_add;
 sub action_task_edit;
 sub action_task_up;
+sub comments_get_rules;
 sub dbi_connect($);
 sub main;
 sub template_end;
@@ -39,6 +57,131 @@ my $result_html;
 
 
 
+
+sub action_comments_ins_upd {
+	( my $hash, my $action, my $param_h, my $table, my $comment_type ) = @_ ;
+
+	my $fields = [
+		[ "type", $comment_type ],
+	];
+
+=pod
+         КАВЫЧКИ                 [X]
+                                 [ ]
+
+  `id`        int(10) unsigned   [ ]
+  `task_id`   int(10) unsigned   [ ]
+  `type`      int(10) unsigned   [ ]
+  `comment`   varchar(200)       [X]
+  `start`     datetime           [X]
+  `min`       int(10) unsigned   [ ]
+  `created`   datetime           [X]
+  `modified`  datetime           [X]
+
+=cut
+
+	my $keys = [ ];
+
+	action_ins_upd_cgi($hash, $param_h, $table, $fields, $keys, comments_get_rules);
+}
+
+sub action_comments_select {
+	( my $hash, my $action, my $param_h, my $table, my $comment_type ) = @_ ;
+
+	my $rules = comments_get_rules;
+
+	my $fields = delete $param_h->{fields};
+
+	my $query = "SELECT ";
+
+	my @fields_names = split /,/, $fields;
+
+	my $comma = "";
+
+	for my $f( @fields_names )
+	{
+		$query .= sprintf "%s\n  `%s`", $comma, $f;
+		$comma = ",";
+	}
+
+	$query .= "\nFROM `" . $table . "`\nWHERE";
+
+	my @keys;
+
+	$comma = "";
+
+	for my $key ( keys %{$param_h} )
+	{
+		my $key_n = $key;
+
+		if ( $key =~ /^q/ )
+		{
+			$key_n =~ s/^q//;
+			push @keys, $param_h->{$key};
+
+			$query .= sprintf "%s\n  `%s` = ?", $comma, $key_n ;
+			$comma = " AND";
+		}
+	}
+
+	$query .= "\n;";
+
+	my $sth; my $rv;
+
+	$sth = $hash->{dbh}->prepare($query);
+
+	if ( not $sth )
+	{
+		print	"Content-type: text/html; charset=UTF-8\n\n" .
+			"{ err: 'app error!' }\n"
+		;
+
+		die "$!\n";
+	}
+
+	$rv = $sth->execute( @keys );
+
+	if ( not $rv )
+	{
+		print	"Content-type: text/html; charset=UTF-8\n\n" .
+			"{ err: 'database error!' }\n"
+		;
+
+		die $sth->errstr . "\n";
+	}
+
+	print "Content-type: text/html; charset=UTF-8\n\n";
+
+	my $fields_arr = $sth->{NAME};
+
+	my $fields_arr_count = scalar @{$fields_arr};
+
+	print "{ info: { }, result: [\n";
+
+	while ( my @row = $sth->fetchrow_array )
+	{
+		my $str = "{\n";
+
+		for ( my $i = 0; $i < $fields_arr_count; ++$i )
+		{
+			my $field_name = $fields_arr->[$i];
+
+			my $val = $row[$i];
+
+			$val = "\"" . string_to_js($val) . "\""
+				if $rules->{$field_name}->{quot};
+
+			$str .= sprintf "  %s: %s,\n",
+				$field_name,
+				$val
+			;
+		}
+
+		print $str, "},\n";
+	}
+
+	print "] }\n";
+}
 
 sub action_default {
 	my $object = shift ;
@@ -96,6 +239,226 @@ sub action_get_task_list {
 			string_to_js($description),
 			$priority;
 	}
+}
+
+sub action_ins_upd {
+	( my $hash, my $table, my $fields,
+			my $keys, my $fields_rules, my $is_insert,
+			my $select_after ) = @_ ;
+
+	my $query;
+
+	my $comma = "";
+
+	my @parameters;
+
+	my @keys_fields = ( @{$keys}, @{$fields} );
+
+	if ( $is_insert )
+	{
+		$query = "INSERT INTO `$table` (" ;
+
+		my $val_str = "";
+
+		for my $f ( @keys_fields )
+		{
+			my $f_name = $f->[FIELD_NAME];
+
+			my $proc = $fields_rules->{$f_name}->{proc};
+
+			my $val1; my $val2;
+
+			if ( $proc )
+			{
+				$val1 = &{$proc} ( $f->[FIELD_VALUE] );
+
+				next if not defined $val1;
+
+				( $val1, $val2 ) = @{$val1};
+			}
+			else
+			{
+				$val1 = "?";
+				$val2 = $f->[FIELD_VALUE];
+			}
+
+			$query .= sprintf "%s\n  `%s`", $comma, $f_name;
+			$val_str .= sprintf "%s%s", $comma, $val1;
+			$comma = ",";
+
+			push (@parameters, $val2) if defined $val2;
+		}
+
+		$query .= ")\nVALUES (" . $val_str . ");";
+	}
+	else
+	{
+		$query = "UPDATE `$table` SET";
+
+		for my $f ( @{$fields} )
+		{
+			my $f_name = $f->[FIELD_NAME];
+
+			my $proc = $fields_rules->{$f_name}->{proc};
+
+			my $val1; my $val2;
+
+			if ( $proc )
+			{
+				$val1 = &{$proc} ( $f->[FIELD_VALUE] );
+
+				next if not defined $val1;
+
+				($val1, $val2) = @{$val1};
+			}
+			else
+			{
+				$val1 = "?";
+				$val2 = $f->[FIELD_VALUE];
+			}
+
+			$query .= sprintf "%s\n  `%s` = %s", $comma, $f_name, $val1;
+			$comma = ",";
+
+			push (@parameters, $val2) if defined $val2;
+		}
+
+		$query .= "\nWHERE";
+		$comma = "";
+
+		for my $k ( @{$keys} )
+		{
+			$query .= sprintf "%s\n  `%s` = ?;", $comma, $k->[FIELD_NAME];
+			$comma = ",";
+
+			push @parameters, $k->[FIELD_VALUE];
+		}
+
+		$query .= "\n;";
+	}
+
+	my $sth; my $rv;
+
+	$sth = $hash->{dbh}->prepare($query);
+
+	if ( not $sth )
+	{
+		print	"Content-type: text/html; charset=UTF-8\n\n" .
+			"{ err: 'app error!' }\n"
+		;
+
+		die "$!\n";
+	}
+
+	$rv = $sth->execute(@parameters);
+
+	if ( not $rv )
+	{
+		print	"Content-type: text/html; charset=UTF-8\n\n" .
+			"{ err: 'database error!' }\n"
+		;
+
+		die $sth->errstr . "\n";
+	}
+
+	if ( $is_insert )
+	{
+		$sth = $hash->{dbh}->prepare("SELECT LAST_INSERT_ID();")
+				or die "prepare(): $!\n";
+
+		$rv = $sth->execute() or die $sth->errstr;
+
+		(my $id) = $sth->fetchrow_array;
+
+		$query = "SELECT";
+		$comma = "";
+
+		for my $f ( @keys_fields )
+		{
+			my $f_name = $f->[FIELD_NAME];
+
+			$query .= sprintf "%s\n  %s", $comma, $f_name;
+			$comma = ",";
+		}
+
+		$query .=
+			"\nFROM `" . $table . "`\n" .
+			"WHERE `" . $keys->[0]->[FIELD_NAME] . "` = ?;"
+		;
+
+		$sth = $hash->{dbh}->prepare($query)
+				or die "prepare(): $!\n";
+
+		$rv = $sth->execute($id) or die $sth->errstr;
+
+		my $fields_arr = $sth->{NAME};
+
+		my @resp_arr = $sth->fetchrow_array;
+
+		my $resp = "{ info: { }, result: [ {\n";
+
+		for ( my $f_idx = 0; $f_idx <= $#{$fields_arr}; ++$f_idx)
+		{
+			my $f_name = $fields_arr->[$f_idx];
+
+			my $val = $resp_arr[$f_idx];
+
+			if ($fields_rules->{$f_name}->{quot})
+			{
+				$val = "\"" . string_to_js($val) . "\"";
+			}
+
+			$resp .= sprintf "  %s: %s,\n", $f_name, $val;
+		}
+
+		$resp .= "} ] }";
+
+		printf	"Content-type: text/html; charset=UTF-8\n\n" .
+			"%s\n",
+			$resp
+		;
+	}
+	else
+	{
+		printf	"Content-type: text/html; charset=UTF-8\n\n" .
+			"{ }\n"
+		;
+	}
+}
+
+sub action_ins_upd_cgi {
+	(my $hash, my $param_h, my $table,
+			my $fields, my $keys, my $fields_rules) = @_ ;
+
+	my $is_insert;
+	my $select_after;
+
+	for my $key ( keys %{$param_h} )
+	{
+		my $key_n = $key;
+
+		if ( $key =~ /^f/ )
+		{
+			$key_n =~ s/^f//;
+			push @{$fields}, [ $key_n, $param_h->{$key} ] ;
+		}
+		elsif ( $key =~ /^k/ )
+		{
+			$key_n =~ s/^k//;
+			push @{$keys}, [ $key_n, $param_h->{$key} ] ;
+		}
+		elsif ( $key eq "ins" )
+		{
+			$is_insert = delete $param_h->{ins};
+		}
+		elsif ( $key eq "select" )
+		{
+			$select_after = delete $param_h->{select};
+		}
+	}
+
+	action_ins_upd($hash, $table, $fields, $keys, $fields_rules,
+			$is_insert ? 1 : 0, $select_after);
 }
 
 sub action_task_add {
@@ -205,6 +568,45 @@ sub dbi_connect($) {
 			or die "connect(): $!\n";
 }
 
+sub comments_get_rules {
+	return {
+		"comment"  => {
+			quot => 1
+		},
+
+		"created"  => {
+			proc => sub { return [ "NOW()", undef ]; },
+			quot => 1
+		},
+
+		"id" => {
+			proc => sub
+			{
+				my $val = shift;
+				return if $val eq "ai" ;
+				return [ "?", $val ] ;
+			},
+		},
+
+		"modified" => {
+			proc => sub { return [ "NOW()", undef ]; },
+			quot => 1
+		},
+
+		"start"    => {
+			proc => sub
+			{
+				my $val = shift;
+				return $val eq "now"
+					? [ "NOW()", undef ]
+					: [ "?",     $val  ]
+				;
+			},
+			quot => 1
+		},
+	};
+}
+
 sub load_config {
         my $hash = shift;
 
@@ -221,9 +623,13 @@ sub load_config {
 sub main {
 	my %hash = ();
 
-	load_config \%hash;
+	load_config (\%hash);
 
-	my $action = $cgi->param("action");
+	my @parameters = $cgi->param;
+
+	my %parameters_h = map { $_ => $cgi->param($_) } @parameters ;
+
+	my $action = delete $parameters_h{action};
 
 	$action = "default" unless defined $action;
 
@@ -233,12 +639,21 @@ sub main {
 		2          => \&action_task_add,
 		3          => \&action_task_edit,
 		4          => \&action_task_up,
+		5          => [
+				\&action_comments_ins_upd,
+				"comments",
+				INS_UPD_LOG_WORK
+		],
+		6          => [
+				\&action_comments_select,
+				"comments"
+		],
 	);
 
 	my $handler = $parameters{$action};
 
-	if (not defined $handler) {
-
+	if (not defined $handler)
+	{
 		printf	"Content-type: text/html; charset=UTF-8\n\n" .
 			"error: Unknown action: '%s'.\n",
 			$action
@@ -248,7 +663,20 @@ sub main {
 
 	dbi_connect \%hash;
 
-	&{$handler} ( \%hash );
+	my $args;
+
+	if ( ref($handler) eq "ARRAY" )
+	{
+		$args = $handler;
+
+		$handler = shift @{$args};
+	}
+	else
+	{
+		$args = [ ];
+	}
+
+	&{$handler} ( \%hash, $action, \%parameters_h, @{$args} );
 }
 
 sub string_to_js {
