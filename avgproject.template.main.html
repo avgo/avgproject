@@ -157,31 +157,32 @@
         while (task.firstChild)
           task.removeChild(task.firstChild);
 
-        task.appendChild(toolkit_label(
-          function(item)
-          {
-            return item.title;
-          },
-          function(new_text, item)
-          {
-            start_ajax(
-              "avgproject.pl?action=3" +
-              "&id=" + item.id +
-              "&title=" + encodeURIComponent(new_text),
-              function (r, args)
-              {
-              },
-              { }
-            );
+        task.appendChild(
+          toolkit_label(
+            function()
+            {
+              return item.title;
+            },
+            function(new_text)
+            {
+              start_ajax(
+                "avgproject.pl?action=3" +
+                "&id=" + item.id +
+                "&title=" + encodeURIComponent(new_text),
+                function (r, args)
+                {
+                },
+                { }
+              );
 
-            item.title = new_text;
+              item.title = new_text;
 
-            projects_tree_view_update(item);
+              projects_tree_view_update(item);
 
-            return new_text;
-          },
-          item
-        ).el_main);
+              return new_text;
+            }
+          )
+        );
 
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
@@ -230,9 +231,8 @@
           td.style.setProperty("width", "150px");
           td.appendChild(toolkit_datetime_picker(
             handl.x,
-            handl.y,
-            null
-          ).el_main);
+            handl.y
+          ));
           tr.appendChild(td);
 
           function mins_to_hr(lm)
@@ -259,7 +259,7 @@
               {
                 return handl.logged_min();
               }
-            ).el_main
+            )
           );
           tr.appendChild(td);
 
@@ -454,17 +454,16 @@
 
         create_tr(tbl, "Дата создания:", [
           toolkit_datetime_picker(
-            function(args)
+            function()
             {
-              return args.dtm_created.replace(" ", "T");
+              return item.dtm_created.replace(" ", "T");
             },
-            function(new_text, args)
+            function(new_text)
             {
               new_text = new_text.replace("T", " ");
-              args.dtm_created = new_text;
-            },
-            item
-          ).el_main,
+              item.dtm_created = new_text;
+            }
+          )
         ]);
 
         create_tr(tbl, "Приоритет:", [

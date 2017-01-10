@@ -73,663 +73,632 @@ function pad(n)
     return n;
 }
 
-function toolkit_datetime_picker(get_value, set_value, args)
+function toolkit_datetime_picker(get_value, set_value)
 {
-  var el = {
-    create: function()
+  var calendar;
+
+  var current_value;
+
+  var el_button;
+
+  var el_main;
+
+  var popup_win;
+
+  var pick_year;
+  var pick_month;
+  var pick_day;
+  var pick_hours;
+  var pick_minutes;
+  var pick_seconds;
+
+  function create()
+  {
+    if (get_value)
     {
-      var cur_val;
+      var v = get_value();
 
-      if (get_value)
+      current_value = v ? new Date(v) : new Date();
+    }
+
+    if (!current_value) current_value = new Date();
+
+    el_main = document.createElement("span");
+
+    el_button = document.createElement("button");
+
+    el_button.style.setProperty("border-width", "0px");
+    el_button.style.setProperty("background-color", "transparent");
+    el_button.style.setProperty("cursor", "pointer");
+    el_button.style.setProperty("padding", "0");
+
+    el_main.appendChild(el_button);
+
+    el_button.addEventListener("click",
+      function()
       {
-        var v = get_value(args);
+        var c = elem_coords(el_main);
 
-        cur_val = v ? new Date(v) : new Date();
+        popup_win.style.setProperty("display", "block");
+        popup_win.style.setProperty("left", c.left + "px");
+        popup_win.style.setProperty("top",
+          (c.top + el_main.offsetHeight) + "px"
+        );
+
+        pick_year.value     = current_value.getFullYear();
+        pick_month.value    = current_value.getMonth() + 1;
+        pick_day.value      = current_value.getDate();
+        pick_hours.value    = current_value.getHours();
+        pick_minutes.value  = current_value.getMinutes();
+        pick_seconds.value  = current_value.getSeconds();
+
+        update_calendar();
       }
+    );
 
-      if (!cur_val) cur_val = new Date();
+    update_btn_value();
 
-      this.current_value = cur_val;
+    popup_win = document.createElement("div");
 
-      this.el_main = document.createElement("span");
+    popup_win.className = "toolkit_dtm_picker";
 
-      this.el_button = document.createElement("button");
+    var btn_close = document.createElement("input");
 
-      this.el_button.style.setProperty("border-width", "0px");
-      this.el_button.style.setProperty("background-color", "transparent");
-      this.el_button.style.setProperty("cursor", "pointer");
-      this.el_button.style.setProperty("padding", "0");
+    btn_close.className  = "toolkit_small_button";
+    btn_close.type       = "button";
+    btn_close.value      = "close";
 
-      this.el_main.appendChild(this.el_button);
-
-      this.el_button.addEventListener("click", (function(x)
+    btn_close.addEventListener("click",
+      function()
       {
-        return function()
-        {
-          var c = elem_coords(x.el_main);
+        popup_win.style.setProperty("display", "none");
+      }
+    );
 
-          x.popup_win.style.setProperty("display", "block");
-          x.popup_win.style.setProperty("left", c.left + "px");
-          x.popup_win.style.setProperty("top", (c.top+x.el_main.offsetHeight) + "px");
+    popup_win.appendChild(btn_close);
 
-          var d = x.current_value;
+    var btn_set = document.createElement("input");
 
-          x.year_pick.value     = d.getFullYear();
-          x.month_pick.value    = d.getMonth() + 1;
-          x.day_pick.value      = d.getDate();
-          x.hours_pick.value    = d.getHours();
-          x.minutes_pick.value  = d.getMinutes();
-          x.seconds_pick.value  = d.getSeconds();
+    btn_set.className  = "toolkit_small_button";
+    btn_set.type       = "button";
+    btn_set.value      = "set";
 
-          x.update_calendar();
-        };
-      })(this));
-
-      this.update_btn_value();
-
-      var popup_win = document.createElement("div");
-
-      this.popup_win = popup_win;
-
-      popup_win.className = "toolkit_dtm_picker";
-
-      var btn_close = document.createElement("input");
-
-      btn_close.className  = "toolkit_small_button";
-      btn_close.type       = "button";
-      btn_close.value      = "close";
-
-      btn_close.addEventListener("click", (function(x)
+    btn_set.addEventListener("click",
+      function()
       {
-        return function()
+        if (set_value)
         {
-          x.popup_win.style.setProperty("display", "none");
-        };
-      })(this));
+          set_value(
+            pad(pick_year.value) + "-" +
+            pad(pick_month.value) + "-" +
+            pad(pick_day.value) + "T" +
+            pad(pick_hours.value) + ":" +
+            pad(pick_minutes.value) + ":" +
+            pad(pick_seconds.value)
+          );
 
-      popup_win.appendChild(btn_close);
-
-      var btn_set = document.createElement("input");
-
-      btn_set.className  = "toolkit_small_button";
-      btn_set.type       = "button";
-      btn_set.value      = "set";
-
-      btn_set.addEventListener("click", (function(x)
-      {
-        return function()
-        {
-          if (set_value)
+          if (get_value)
           {
-            set_value(
-              pad(x.year_pick.value) + "-" +
-              pad(x.month_pick.value) + "-" +
-              pad(x.day_pick.value) + "T" +
-              pad(x.hours_pick.value) + ":" +
-              pad(x.minutes_pick.value) + ":" +
-              pad(x.seconds_pick.value),
-              args
-            );
+            var v = get_value();
 
-            var cv;
-
-            if (get_value)
-            {
-              var v = get_value(args);
-
-              cv = v ? new Date(v) : new Date();
-            }
-
-            if (!cv) cv = new Date();
-
-            x.current_value = cv;
-
-            x.update_btn_value();
+            current_value = v ? new Date(v) : new Date();
           }
 
-          x.popup_win.style.setProperty("display", "none");
-        };
-      })(this));
+          if (!current_value) current_value = new Date();
 
-      popup_win.appendChild(btn_set);
+          update_btn_value();
+        }
 
-      popup_win.appendChild(document.createElement("br"));
+        popup_win.style.setProperty("display", "none");
+      }
+    );
 
-      var year_pick = document.createElement("input");
+    popup_win.appendChild(btn_set);
 
-      year_pick.type = "text";
-      year_pick.value = "YYYY";
-      year_pick.style.setProperty("width", "45px");
-      year_pick.style.setProperty("text-align", "center");
-      year_pick.addEventListener("wheel", (function (x)
+    popup_win.appendChild(document.createElement("br"));
+
+    pick_year = document.createElement("input");
+
+    pick_year.type = "text";
+    pick_year.value = "YYYY";
+    pick_year.style.setProperty("width", "45px");
+    pick_year.style.setProperty("text-align", "center");
+    pick_year.addEventListener("wheel",
+      function(ev)
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        ev.preventDefault();
 
-          min_max_check(x.year_pick,0,9999);
+        min_max_check(pick_year,0,9999);
 
-          if (ev.deltaY < 0 && x.year_pick.value < 9999)
-            ++x.year_pick.value;
-          else
-          if (ev.deltaY > 0 && x.year_pick.value > 0)
-            --x.year_pick.value;
+        if (ev.deltaY < 0 && pick_year.value < 9999)
+          ++pick_year.value;
+        else
+        if (ev.deltaY > 0 && pick_year.value > 0)
+          --pick_year.value;
 
-          x.day_correction();
-          x.update_calendar();
-        };
-      })(this));
-      year_pick.addEventListener("input", (function(x)
+        day_correction();
+        update_calendar();
+      }
+    );
+    pick_year.addEventListener("input",
+      function ()
       {
-        return function ()
-        {
-          min_max_check(x.year_pick,0,9999);
-          x.day_correction();
-          x.update_calendar();
-        };
-      })(this));
+        min_max_check(pick_year,0,9999);
+        day_correction();
+        update_calendar();
+      }
+    );
 
-      this.year_pick = year_pick;
+    popup_win.appendChild(pick_year);
 
-      popup_win.appendChild(year_pick);
+    popup_win.appendChild(document.createTextNode("-"));
 
-      popup_win.appendChild(document.createTextNode("-"));
+    pick_month = document.createElement("input");
 
-      var month_pick = document.createElement("input");
-
-      month_pick.type = "text";
-      month_pick.value = "MM";
-      month_pick.style.setProperty("width", "30px");
-      month_pick.style.setProperty("text-align", "center");
-      month_pick.addEventListener("wheel", (function (obj,el,min,max)
+    pick_month.type = "text";
+    pick_month.value = "MM";
+    pick_month.style.setProperty("width", "30px");
+    pick_month.style.setProperty("text-align", "center");
+    pick_month.addEventListener("wheel",
+      function(ev)
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        ev.preventDefault();
 
-          var y = obj.year_pick.value;
-          var m = el.value;
+        var y = pick_year.value;
+        var m = pick_month.value;
 
-          var t = y*12+(m-1);
-          var t_max = (9999-0+1) * (12-1+1);
+        var t = y*12+(m-1);
+        var t_max = (9999-0+1) * (12-1+1);
 
-          if (ev.deltaY < 0 && t < t_max)
-            ++t;
-          else
-          if (ev.deltaY > 0 && t > 0)
-            --t;
+        if (ev.deltaY < 0 && t < t_max)
+          ++t;
+        else
+        if (ev.deltaY > 0 && t > 0)
+          --t;
 
-          y = Math.floor(t / 12);
-          m = t % 12 + 1;
+        y = Math.floor(t / 12);
+        m = t % 12 + 1;
 
-          obj.year_pick.value   = y;
-          obj.month_pick.value  = m;
+        pick_year.value   = y;
+        pick_month.value  = m;
 
-          obj.day_correction();
-          obj.update_calendar();
-        };
-      })(this,month_pick,1,12));
-      month_pick.addEventListener("input", (function(x)
+        day_correction();
+        update_calendar();
+      }
+    );
+    pick_month.addEventListener("input",
+      function ()
       {
-        return function ()
-        {
-          min_max_check(x.month_pick,1,12);
-          x.day_correction();
-          x.update_calendar();
-        };
-      })(this));
+        min_max_check(pick_month,1,12);
+        day_correction();
+        update_calendar();
+      }
+    );
 
-      this.month_pick = month_pick;
+    popup_win.appendChild(pick_month);
 
-      popup_win.appendChild(month_pick);
+    popup_win.appendChild(document.createTextNode("-"));
 
-      popup_win.appendChild(document.createTextNode("-"));
+    pick_day = document.createElement("input");
 
-      var day_pick = document.createElement("input");
-
-      day_pick.type = "text";
-      day_pick.value = "DD";
-      day_pick.style.setProperty("width", "30px");
-      day_pick.style.setProperty("text-align", "center");
-      day_pick.addEventListener("wheel", (function(x)
+    pick_day.type = "text";
+    pick_day.value = "DD";
+    pick_day.style.setProperty("width", "30px");
+    pick_day.style.setProperty("text-align", "center");
+    pick_day.addEventListener("wheel",
+      function(ev)
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        ev.preventDefault();
 
-          var dtm = new Date(
-              x.year_pick.value,
-              x.month_pick.value-1,
-              x.day_pick.value
-          );
+        var dtm = new Date(
+            pick_year.value,
+            pick_month.value-1,
+            pick_day.value
+        );
 
-          if (ev.deltaY < 0)
-            dtm.setTime(dtm.getTime() + 24*60*60*1000);
-          else
-          if (ev.deltaY > 0)
-            dtm.setTime(dtm.getTime() - 24*60*60*1000);
+        if (ev.deltaY < 0)
+          dtm.setTime(dtm.getTime() + 24*60*60*1000);
+        else
+        if (ev.deltaY > 0)
+          dtm.setTime(dtm.getTime() - 24*60*60*1000);
 
-          x.year_pick.value   = dtm.getFullYear();
-          x.month_pick.value  = dtm.getMonth() + 1;
-          x.day_pick.value    = dtm.getDate();
+        pick_year.value   = dtm.getFullYear();
+        pick_month.value  = dtm.getMonth() + 1;
+        pick_day.value    = dtm.getDate();
 
-          x.update_calendar();
-        };
-      })(this));
-      day_pick.addEventListener("input", (function(x)
+        update_calendar();
+      }
+    );
+    pick_day.addEventListener("input",
+      function ()
       {
-        return function ()
-        {
-          x.day_correction();
-          x.update_calendar();
-        };
-      })(this));
+        day_correction();
+        update_calendar();
+      }
+    );
 
-      this.day_pick = day_pick;
+    popup_win.appendChild(pick_day);
 
-      popup_win.appendChild(day_pick);
+    popup_win.appendChild(document.createTextNode(" "));
 
-      popup_win.appendChild(document.createTextNode(" "));
+    pick_hours = document.createElement("input");
 
-      var hours_pick = document.createElement("input");
-
-      hours_pick.type = "text";
-      hours_pick.value = "HH";
-      hours_pick.style.setProperty("width", "30px");
-      hours_pick.style.setProperty("text-align", "center");
-      hours_pick.addEventListener("wheel", (function(x)
+    pick_hours.type = "text";
+    pick_hours.value = "HH";
+    pick_hours.style.setProperty("width", "30px");
+    pick_hours.style.setProperty("text-align", "center");
+    pick_hours.addEventListener("wheel",
+      function(ev)
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        ev.preventDefault();
 
-          var dtm = new Date(
-              x.year_pick.value,
-              x.month_pick.value-1,
-              x.day_pick.value,
-              x.hours_pick.value
-          );
+        var dtm = new Date(
+            pick_year.value,
+            pick_month.value-1,
+            pick_day.value,
+            pick_hours.value
+        );
 
-          if (ev.deltaY < 0)
-            dtm.setTime(dtm.getTime() + 60*60*1000);
-          else
-          if (ev.deltaY > 0)
-            dtm.setTime(dtm.getTime() - 60*60*1000);
+        if (ev.deltaY < 0)
+          dtm.setTime(dtm.getTime() + 60*60*1000);
+        else
+        if (ev.deltaY > 0)
+          dtm.setTime(dtm.getTime() - 60*60*1000);
 
-          x.year_pick.value   = dtm.getFullYear();
-          x.month_pick.value  = dtm.getMonth() + 1;
-          x.day_pick.value    = dtm.getDate();
-          x.hours_pick.value  = dtm.getHours();
+        pick_year.value   = dtm.getFullYear();
+        pick_month.value  = dtm.getMonth() + 1;
+        pick_day.value    = dtm.getDate();
+        pick_hours.value  = dtm.getHours();
 
-          x.update_calendar();
-        };
-      })(this));
-      hours_pick.addEventListener("input", (function(x) {
-        return function ()
-        {
-          min_max_check(x.hours_pick, 0, 23);
-          x.update_calendar();
-        };
-      })(this));
-
-      this.hours_pick = hours_pick;
-
-      popup_win.appendChild(hours_pick);
-
-      popup_win.appendChild(document.createTextNode(":"));
-
-      var minutes_pick = document.createElement("input");
-
-      minutes_pick.type = "text";
-      minutes_pick.value = "MM";
-      minutes_pick.style.setProperty("width", "30px");
-      minutes_pick.style.setProperty("text-align", "center");
-      minutes_pick.addEventListener("wheel", (function(x)
+        update_calendar();
+      }
+    );
+    pick_hours.addEventListener("input",
+      function ()
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        min_max_check(pick_hours, 0, 23);
+        update_calendar();
+      }
+    );
 
-          var dtm = new Date(
-              x.year_pick.value,
-              x.month_pick.value-1,
-              x.day_pick.value,
-              x.hours_pick.value,
-              x.minutes_pick.value
-          );
+    popup_win.appendChild(pick_hours);
 
-          if (ev.deltaY < 0)
-            dtm.setTime(dtm.getTime() + 60*1000);
-          else
-          if (ev.deltaY > 0)
-            dtm.setTime(dtm.getTime() - 60*1000);
+    popup_win.appendChild(document.createTextNode(":"));
 
-          x.year_pick.value     = dtm.getFullYear();
-          x.month_pick.value    = dtm.getMonth() + 1;
-          x.day_pick.value      = dtm.getDate();
-          x.hours_pick.value    = dtm.getHours();
-          x.minutes_pick.value  = dtm.getMinutes();
+    pick_minutes = document.createElement("input");
 
-          x.update_calendar();
-        };
-      })(this));
-      minutes_pick.addEventListener("input", (function(x) {
-        return function ()
-        {
-          min_max_check(x.minutes_pick, 0, 59);
-          x.update_calendar();
-        };
-      })(this));
-
-      this.minutes_pick = minutes_pick;
-
-      popup_win.appendChild(minutes_pick);
-
-      popup_win.appendChild(document.createTextNode(":"));
-
-      var seconds_pick = document.createElement("input");
-
-      seconds_pick.type = "text";
-      seconds_pick.value = "SS";
-      seconds_pick.style.setProperty("width", "30px");
-      seconds_pick.style.setProperty("text-align", "center");
-      seconds_pick.addEventListener("wheel", (function(x)
+    pick_minutes.type = "text";
+    pick_minutes.value = "MM";
+    pick_minutes.style.setProperty("width", "30px");
+    pick_minutes.style.setProperty("text-align", "center");
+    pick_minutes.addEventListener("wheel",
+      function(ev)
       {
-        return function(ev)
-        {
-          ev.preventDefault();
+        ev.preventDefault();
 
-          var dtm = new Date(
-              x.year_pick.value,
-              x.month_pick.value-1,
-              x.day_pick.value,
-              x.hours_pick.value,
-              x.minutes_pick.value,
-              x.seconds_pick.value
-          );
+        var dtm = new Date(
+            pick_year.value,
+            pick_month.value-1,
+            pick_day.value,
+            pick_hours.value,
+            pick_minutes.value
+        );
 
-          if (ev.deltaY < 0)
-            dtm.setTime(dtm.getTime() + 1000);
-          else
-          if (ev.deltaY > 0)
-            dtm.setTime(dtm.getTime() - 1000);
+        if (ev.deltaY < 0)
+          dtm.setTime(dtm.getTime() + 60*1000);
+        else
+        if (ev.deltaY > 0)
+          dtm.setTime(dtm.getTime() - 60*1000);
 
-          x.year_pick.value     = dtm.getFullYear();
-          x.month_pick.value    = dtm.getMonth() + 1;
-          x.day_pick.value      = dtm.getDate();
-          x.hours_pick.value    = dtm.getHours();
-          x.minutes_pick.value  = dtm.getMinutes();
-          x.seconds_pick.value  = dtm.getSeconds();
+        pick_year.value     = dtm.getFullYear();
+        pick_month.value    = dtm.getMonth() + 1;
+        pick_day.value      = dtm.getDate();
+        pick_hours.value    = dtm.getHours();
+        pick_minutes.value  = dtm.getMinutes();
 
-          x.update_calendar();
-        };
-      })(this));
-      seconds_pick.addEventListener("input", (function(x) {
-        return function ()
-        {
-          min_max_check(x.seconds_pick, 0, 59);
-          x.update_calendar();
-        };
-      })(this));
+        update_calendar();
+      }
+    );
+    pick_minutes.addEventListener("input",
+      function ()
+      {
+        min_max_check(pick_minutes, 0, 59);
+        update_calendar();
+      }
+    );
 
-      this.seconds_pick = seconds_pick;
+    popup_win.appendChild(pick_minutes);
 
-      popup_win.appendChild(seconds_pick);
+    popup_win.appendChild(document.createTextNode(":"));
 
-      popup_win.appendChild(document.createElement("br"));
+    pick_seconds = document.createElement("input");
 
-      var calendar = document.createElement("span");
+    pick_seconds.type = "text";
+    pick_seconds.value = "SS";
+    pick_seconds.style.setProperty("width", "30px");
+    pick_seconds.style.setProperty("text-align", "center");
+    pick_seconds.addEventListener("wheel",
+      function(ev)
+      {
+        ev.preventDefault();
 
-      this.calendar = calendar;
+        var dtm = new Date(
+            pick_year.value,
+            pick_month.value-1,
+            pick_day.value,
+            pick_hours.value,
+            pick_minutes.value,
+            pick_seconds.value
+        );
 
-      popup_win.appendChild(calendar);
+        if (ev.deltaY < 0)
+          dtm.setTime(dtm.getTime() + 1000);
+        else
+        if (ev.deltaY > 0)
+          dtm.setTime(dtm.getTime() - 1000);
 
-      this.el_main.appendChild(popup_win);
-    },
-    day_correction: function()
+        pick_year.value     = dtm.getFullYear();
+        pick_month.value    = dtm.getMonth() + 1;
+        pick_day.value      = dtm.getDate();
+        pick_hours.value    = dtm.getHours();
+        pick_minutes.value  = dtm.getMinutes();
+        pick_seconds.value  = dtm.getSeconds();
+
+        update_calendar();
+      }
+    );
+    pick_seconds.addEventListener("input",
+      function ()
+      {
+        min_max_check(pick_seconds, 0, 59);
+        update_calendar();
+      }
+    );
+
+    popup_win.appendChild(pick_seconds);
+
+    popup_win.appendChild(document.createElement("br"));
+
+    calendar = document.createElement("span");
+
+    popup_win.appendChild(calendar);
+
+    el_main.appendChild(popup_win);
+  }
+
+  function day_correction()
+  {
+    min_max_check(pick_day, 1, days_in_month(
+      pick_year.value,
+      pick_month.value
+    ));
+  }
+
+  function update_btn_value()
+  {
+    var d = current_value;
+    var b = el_button;
+
+    while (b.firstChild)
+      b.removeChild(b.firstChild);
+
+    b.appendChild(document.createTextNode(
+      pad(d.getDate()) + "." +
+      pad(d.getMonth()+1) + "." +
+      pad(d.getFullYear()) + ", " +
+      pad(d.getHours()) + ":" +
+      pad(d.getMinutes()) + ":" +
+      pad(d.getSeconds())
+    ));
+  }
+
+  function update_calendar()
+  {
+    while (calendar.firstChild)
+      calendar.removeChild(calendar.firstChild);
+
+    var t = document.createElement("table");
+
+    t.border = 0;
+
+    var pick_y = parseInt(pick_year.value, 10);
+    var pick_m = parseInt(pick_month.value, 10);
+    var pick_d = parseInt(pick_day.value, 10);
+
+    var w_d_labels = [ "пн", "вт", "ср", "чт", "пт", "сб", "вс" ];
+
+    var tr, td;
+
+    tr = document.createElement("tr");
+
+    for (var i = 0; i < 7; ++i)
     {
-      min_max_check(this.day_pick, 1, days_in_month(
-        this.year_pick.value,
-        this.month_pick.value
-      ));
-    },
-    update_btn_value: function()
+      td = document.createElement("td");
+      td.appendChild(document.createTextNode(w_d_labels[i]));
+      tr.appendChild(td);
+    }
+
+    t.appendChild(tr);
+
+    dtm = new Date(pick_y,pick_m-1,1);
+
+    calendar.appendChild(document.createElement("br"));
+
+    // (a-1+max+b)%max+1
+
+    // b=-1, max=12, (a+10)%12+1
+
+    var prev_month = (pick_m + 10) % 12 + 1;
+
+    var cur_month = prev_month;
+    var cur_year = cur_month == 12 ? pick_y - 1 : pick_y;
+    var cur_dim = days_in_month(cur_year, cur_month);
+
+    var cur_day = (cur_dim - (dtm.getDay()+6) % 7 - 7) % cur_dim + 1;
+
+    for (var i = 0; i < 8; ++i)
     {
-      var d = this.current_value;
-      var b = this.el_button;
-
-      while (b.firstChild)
-        b.removeChild(b.firstChild);
-
-      b.appendChild(document.createTextNode(
-        pad(d.getDate()) + "." +
-        pad(d.getMonth()+1) + "." +
-        pad(d.getFullYear()) + ", " +
-        pad(d.getHours()) + ":" +
-        pad(d.getMinutes()) + ":" +
-        pad(d.getSeconds())
-      ));
-    },
-    update_calendar: function()
-    {
-      var cal = this.calendar;
-
-      while (cal.firstChild)
-        cal.removeChild(cal.firstChild);
-
-      var t = document.createElement("table");
-
-      t.border = 0;
-
-      var pick_y = parseInt(this.year_pick.value, 10);
-      var pick_m = parseInt(this.month_pick.value, 10);
-      var pick_d = parseInt(this.day_pick.value, 10);
-
-      var w_d_labels = [ "пн", "вт", "ср", "чт", "пт", "сб", "вс" ];
-
-      var tr, td;
-
       tr = document.createElement("tr");
 
-      for (var i = 0; i < 7; ++i)
+      for (var dow = 0; dow < 7; ++dow)
       {
         td = document.createElement("td");
-        td.appendChild(document.createTextNode(w_d_labels[i]));
+
+        var btn = document.createElement("input");
+
+        btn.type   = "button";
+        btn.value  = cur_day;
+
+        btn.style.setProperty("width","25px");
+        btn.style.setProperty("text-align","right");
+
+        if (pick_m == cur_month)
+        {
+          if (pick_d == cur_day)
+            btn.style.setProperty("background-color","#FF7575");
+          else
+          if (dow == 5 || dow == 6)
+            btn.style.setProperty("background-color","#FFCFCF");
+          else
+            btn.style.setProperty("background-color","#CFE7FF");
+        }
+        else
+          btn.style.setProperty("background-color","#ffffff");
+
+        btn.style.setProperty("border-width", "1px");
+        btn.style.setProperty("padding", "0px 0px 0px 0px");
+
+        btn.addEventListener("click", (function(y,m,d) {
+          return function() {
+            pick_year.value   = y;
+            pick_month.value  = m;
+            pick_day.value    = d;
+
+            update_calendar();
+          };
+        })(cur_year,cur_month,cur_day));
+
+        td.appendChild(btn);
+
         tr.appendChild(td);
+
+        if (cur_day == cur_dim)
+        {
+          if (cur_month == 12)
+          {
+            cur_month = 1;
+            ++cur_year;
+          }
+          else
+            ++cur_month;
+
+          cur_day = 1;
+          cur_dim = days_in_month(cur_year, cur_month);
+        }
+        else
+          ++cur_day;
       }
 
       t.appendChild(tr);
+    }
 
-      dtm = new Date(pick_y,pick_m-1,1);
+    calendar.appendChild(t);
+  }
 
-      cal.appendChild(document.createElement("br"));
+  create();
 
-      // (a-1+max+b)%max+1
-
-      // b=-1, max=12, (a+10)%12+1
-
-      var prev_month = (pick_m + 10) % 12 + 1;
-
-      var cur_month = prev_month;
-      var cur_year = cur_month == 12 ? pick_y - 1 : pick_y;
-      var cur_dim = days_in_month(cur_year, cur_month);
-
-      var cur_day = (cur_dim - (dtm.getDay()+6) % 7 - 7) % cur_dim + 1;
-
-      for (var i = 0; i < 8; ++i)
-      {
-        tr = document.createElement("tr");
-
-        for (var dow = 0; dow < 7; ++dow)
-        {
-          td = document.createElement("td");
-
-          var btn = document.createElement("input");
-
-          btn.type   = "button";
-          btn.value  = cur_day;
-
-          btn.style.setProperty("width","25px");
-          btn.style.setProperty("text-align","right");
-
-          if (pick_m == cur_month)
-          {
-            if (pick_d == cur_day)
-              btn.style.setProperty("background-color","#FF7575");
-            else
-            if (dow == 5 || dow == 6)
-              btn.style.setProperty("background-color","#FFCFCF");
-            else
-              btn.style.setProperty("background-color","#CFE7FF");
-          }
-          else
-            btn.style.setProperty("background-color","#ffffff");
-
-          btn.style.setProperty("border-width", "1px");
-          btn.style.setProperty("padding", "0px 0px 0px 0px");
-
-          btn.addEventListener("click", (function(obj,y,m,d) {
-            return function() {
-              obj.year_pick.value   = y;
-              obj.month_pick.value  = m;
-              obj.day_pick.value    = d;
-
-              obj.update_calendar();
-            };
-          })(this,cur_year,cur_month,cur_day));
-
-          td.appendChild(btn);
-
-          tr.appendChild(td);
-
-          if (cur_day == cur_dim)
-          {
-            if (cur_month == 12)
-            {
-              cur_month = 1;
-              ++cur_year;
-            }
-            else
-              ++cur_month;
-
-            cur_day = 1;
-            cur_dim = days_in_month(cur_year, cur_month);
-          }
-          else
-            ++cur_day;
-        }
-
-        t.appendChild(tr);
-      }
-
-      cal.appendChild(t);
-    },
-  };
-
-  el.create();
-
-  return el;
+  return el_main;
 }
 
-function toolkit_label(get_title, set_title, args)
+function toolkit_label(get_title, set_title)
 {
-  var el = {
-    args: args,
-    button_click_change: function()
+  var el_button;
+
+  var el_main;
+
+  var el_text;
+
+  var el_text_edit;
+
+  var button_click_change = function()
+  {
+    var text = set_title(el_text_edit.value);
+
+    while (el_text.firstChild)
+      el_text.removeChild(el_text.firstChild);
+
+    el_text.appendChild(document.createTextNode(text));
+
+    while (el_button.firstChild)
+      el_button.removeChild(el_button.firstChild);
+
+    el_button.appendChild(document.createTextNode("edit"));
+
+    el_button.removeEventListener("click", button_click_change);
+    el_button.addEventListener("click", button_click_edit);
+  }
+
+  var button_click_edit = function()
+  {
+    while (el_text.firstChild)
+      el_text.removeChild(el_text.firstChild);
+
+    el_text_edit = document.createElement("input");
+
+    el_text_edit.type = "text";
+
+    el_text_edit.value = get_title();
+
+    el_text_edit.addEventListener("keyup", function (event)
     {
-      var text = this.set_title(this.el_text_edit.value, args);
+      event.preventDefault();
+      if (event.keyCode != 13)
+        return;
+      el_button.click();
+    });
 
-      while (this.el_text.firstChild)
-        this.el_text.removeChild(this.el_text.firstChild);
+    el_text.appendChild(el_text_edit);
 
-      this.el_text.appendChild(document.createTextNode(text));
+    el_text_edit.focus();
 
-      this.el_button.removeEventListener("click", this.button_click_change_handler);
-      this.el_button.addEventListener("click", this.button_click_edit_handler);
+    el_text_edit.selectionStart  = 0;
+    el_text_edit.selectionEnd    = el_text_edit.value.length;
 
-      while (this.el_button.firstChild)
-        this.el_button.removeChild(this.el_button.firstChild);
+    while (el_button.firstChild)
+      el_button.removeChild(el_button.firstChild);
 
-      this.el_button.appendChild(document.createTextNode("edit"));
-    },
-    button_click_edit: function()
-    {
-      while (this.el_text.firstChild)
-        this.el_text.removeChild(this.el_text.firstChild);
+    el_button.appendChild(document.createTextNode("ok"));
 
-      var edit = document.createElement("input");
+    el_button.removeEventListener("click", button_click_edit);
+    el_button.addEventListener("click", button_click_change);
+  }
 
-      edit.type = "text";
+  function create()
+  {
+    el_main = document.createElement("span");
 
-      edit.value = this.get_title(this.args);
+    el_text = document.createElement("span");
 
-      edit.addEventListener("keyup", (function(x)
-      {
-        return function (event)
-        {
-          event.preventDefault();
-          if (event.keyCode != 13)
-            return;
-          x.el_button.click();
-        }
-      })(this));
+    el_text.appendChild(
+      document.createTextNode(get_title())
+    );
 
-      this.el_text.appendChild(edit);
+    el_main.appendChild(el_text);
 
-      this.el_text_edit = edit;
+    el_button = document.createElement("button");
 
-      edit.focus();
+    el_button.className = "toolkit_small_button";
 
-      edit.selectionStart  = 0;
-      edit.selectionEnd    = edit.value.length;
+    el_button.appendChild(document.createTextNode("edit"));
 
-      while (this.el_button.firstChild)
-        this.el_button.removeChild(this.el_button.firstChild);
+    el_button.addEventListener("click", button_click_edit);
 
-      this.el_button.appendChild(document.createTextNode("ok"));
+    el_main.appendChild(el_button);
+  }
 
-      this.el_button.removeEventListener("click", this.button_click_edit_handler);
-      this.el_button.addEventListener("click", this.button_click_change_handler);
-    },
-    create: function()
-    {
-      this.el_main = document.createElement("span");
+  create();
 
-      this.el_text = document.createElement("span");
-
-      this.el_text.appendChild(
-        document.createTextNode(this.get_title(this.args))
-      );
-
-      this.el_main.appendChild(this.el_text);
-
-      this.el_button = document.createElement("button");
-
-      this.el_button.className = "toolkit_small_button";
-
-      this.el_button.appendChild(document.createTextNode("edit"));
-
-      this.button_click_change_handler = (function (x)
-      {
-        return function() { x.button_click_change(); };
-      })(this);
-
-      this.button_click_edit_handler = (function (x)
-      {
-        return function() { x.button_click_edit(); };
-      })(this);
-
-      this.el_button.addEventListener("click", this.button_click_edit_handler);
-
-      this.el_main.appendChild(this.el_button);
-    },
-    get_title: get_title,
-    set_title: set_title
-  };
-
-  el.create();
-
-  return el;
+  return el_main;
 }
 
 /* vim: set expandtab ts=2 : */
