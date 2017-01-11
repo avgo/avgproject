@@ -187,32 +187,7 @@
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
 
-        function avgp_task_comment_log_work_data(id,task_id,type,comment,start,min,created,modified)
-        {
-          return {
-            comment:     function() { return comment; },
-
-            start:       function() { return start; },
-
-            get_id:      function() { return id; },
-
-            logged_min:  function() { return min; },
-
-            task_id:     function() { return task_id; },
-
-            x: function(args)
-            {
-              return start.replace(" ", "T");
-            },
-
-            y: function(new_text, args)
-            {
-              start = new_text.replace("T", " ");
-            },
-          };
-        }
-
-        function avgp_task_comment_log_work_view(handl)
+        function avgp_task_comment_log_work_view(comment, task_id)
         {
           var tbl = document.createElement("table");
 
@@ -230,19 +205,35 @@
           td.style.setProperty("text-align", "center");
           td.style.setProperty("width", "150px");
           td.appendChild(toolkit_datetime_picker(
-            handl.x,
-            handl.y
+            function()
+            {
+              return comment.start.replace(" ", "T");
+            },
+            function(new_text)
+            {
+              comment.start = new_text.replace("T", " ");
+            }
           ));
           tr.appendChild(td);
 
           function mins_to_hr(lm)
           {
+            if (!lm)
+              return "0m";
+            var s;
             var h = Math.floor(lm / 60);
-            var m = lm % 60;
-            if (0)
-              return pad(h) + ":" + pad(m);
+            if (h)
+              s = h + "h";
             else
-              return h + "h, " + m + "m";
+              s = "";
+            var m = lm % 60;
+            if (m)
+            {
+              if (s != '')
+                s += ",";
+              s += m + "m";
+            }
+            return s;
           }
 
           td = document.createElement("td");
@@ -253,11 +244,33 @@
             toolkit_label(
               function()
               {
-                return handl.logged_min();
+                return mins_to_hr(comment.min);
               },
-              function()
+              function(text)
               {
-                return handl.logged_min();
+                var h; var m; var arr; var res = 0;
+                text = text.replace(/^ */,'');
+                arr = text.match(/^[0-9]+h/);
+                if (arr && arr.length == 1)
+                {
+                  text = text.replace(/^[0-9]+h/,'');
+                  res = parseInt(arr[0].replace("h", ''), 10) * 60;
+                }
+                text = text.replace(/^,/,'');
+                arr = text.match(/^[0-9]+/);
+                if (arr && arr.length == 1)
+                {
+                  text = text.replace(/^[0-9]+/,'');
+                  res += parseInt(arr[0], 10);
+                }
+                text = text.replace(/^m/,'');
+                if (text != '')
+                {
+                  alert("error: bad text: \"" + text + "\"");
+                  return mins_to_hr(comment.min);
+                }
+                comment.min = res;
+                return mins_to_hr(res);
               }
             )
           );
@@ -273,7 +286,7 @@
           td.style.setProperty("border-width", "1px 0px 0px");
           td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
           td.style.setProperty("padding", "5px");
-          td.appendChild(document.createTextNode(handl.comment()));
+          td.appendChild(document.createTextNode(comment.comment));
           tr.appendChild(td);
 
           tbl.appendChild(tr);
@@ -356,16 +369,7 @@
                       var el = resp.result[0];
 
                       task.appendChild(
-                        avgp_task_comment_log_work_view(avgp_task_comment_log_work_data(
-                          el.id,
-                          item.id,
-                          el.type,
-                          el.comment,
-                          el.start,
-                          el.min,
-                          el.created,
-                          el.modified
-                        ))
+                        avgp_task_comment_log_work_view(el, item.id)
                       );
                     },
                     { }
@@ -511,16 +515,7 @@
               task.appendChild(document.createElement("br"));
 
               task.appendChild(
-                avgp_task_comment_log_work_view(avgp_task_comment_log_work_data(
-                  el.id,
-                  item.id,
-                  el.type,
-                  el.comment,
-                  el.start,
-                  el.min,
-                  el.created,
-                  el.modified
-                ))
+                avgp_task_comment_log_work_view(el, item.id)
               );
             }
           },
