@@ -701,4 +701,76 @@ function toolkit_label(get_title, set_title)
   return el_main;
 }
 
+function toolkit_memo_create(text_get, text_set)
+{
+  var main;
+
+  var div_ta;
+
+  function create()
+  {
+    main = document.createElement("div");
+
+    main.style.setProperty("width", "800px");
+
+    var btn = document.createElement("button");
+
+    btn.className = "toolkit_small_button";
+
+    btn.appendChild(document.createTextNode("edit"));
+
+    btn.addEventListener("click",
+      function()
+      {
+        var textarea;
+
+        while (div_ta.firstChild)
+          div_ta.removeChild(div_ta.firstChild);
+
+        var btn = document.createElement("button");
+
+        btn.className = "toolkit_small_button";
+
+        btn.appendChild(document.createTextNode("ok"));
+
+        btn.addEventListener("click",
+          function()
+          {
+            while (div_ta.firstChild)
+              div_ta.removeChild(div_ta.firstChild);
+
+            text_set(textarea.value);
+
+            div_ta.appendChild(document.createTextNode(text_get()));
+          }
+        );
+
+        div_ta.appendChild(btn);
+
+        div_ta.appendChild(document.createElement("br"));
+
+        textarea = document.createElement("textarea");
+
+        textarea.style.setProperty("width", "800px");
+
+        textarea.value = text_get();
+
+        div_ta.appendChild(textarea);
+      }
+    );
+
+    main.appendChild(btn);
+
+    div_ta = document.createElement("div");
+
+    div_ta.appendChild(document.createTextNode(text_get()));
+
+    main.appendChild(div_ta);
+  }
+
+  create();
+
+  return main;
+}
+
 /* vim: set expandtab ts=2 : */

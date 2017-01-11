@@ -480,14 +480,18 @@
 
         task.appendChild(tbl);
 
-        var elem_textarea = toolkit_memo_create(
-          "task_ws_task_description",
-          "task_ws_task_description_text_get",
-          "task_ws_task_description_text_set",
-          "{ id: " + item.id + " }"
+        task.appendChild(
+          toolkit_memo_create(
+            function()
+            {
+              return item.description;
+            },
+            function(v)
+            {
+              item.description = v;
+            }
+          )
         );
-
-        task.appendChild(elem_textarea);
 
         start_ajax(
           "avgproject.pl?action=6" +
@@ -580,32 +584,6 @@
         return s.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"").replace(/'/g, "\\'");
       }
 
-      function task_ws_task_description_text_get(args)
-      {
-        var item = tasks_get_task_by_id(args.id);
-
-        return item.description;
-      }
-
-      function task_ws_task_description_text_set(new_text, args)
-      {
-        start_ajax(
-          "avgproject.pl?action=3" +
-          "&id=" + args.id +
-          "&description=" + encodeURIComponent(new_text),
-          function (r, args)
-          {
-          },
-          { }
-        );
-
-        var item = tasks_get_task_by_id(args.id);
-
-        item.description = new_text;
-
-        return new_text;
-      }
-
       function tasks_get_task_by_id(id)
       {
         var item;
@@ -613,93 +591,6 @@
         eval("item = app.tasks.items.item_" + id + ";");
 
         return item;
-      }
-
-      function toolkit_memo_click(memo_id, text_get, text_set, args)
-      {
-        var memo_btn_id = memo_id + "_btn";
-
-        var memo_memo_id = memo_id + "_memo";
-
-        var memo_memo = document.getElementById(memo_memo_id);
-
-        var textarea = document.createElement("textarea");
-
-        textarea.style = "width: 800px;";
-
-        while (memo_memo.firstChild)
-          memo_memo.removeChild(memo_memo.firstChild);
-
-        var button = document.createElement("input");
-
-        button.type       = "button";
-        button.id         = memo_id + "_ok_btn";
-        button.className  = "toolkit_small_button";
-        button.value      = "ok";
-
-        button.onclick = function ()
-        {
-          var t;
-
-          eval("t = " + text_set + "(textarea.value, " + args + ");");
-
-          while (memo_memo.firstChild)
-            memo_memo.removeChild(memo_memo.firstChild);
-
-          memo_memo.appendChild(document.createTextNode(t));
-        };
-
-        memo_memo.appendChild(button);
-
-        var text;
-
-        eval("text = " + text_get + "(" + args + ");");
-
-        textarea.appendChild(document.createTextNode(text));
-
-        memo_memo.appendChild(textarea);
-
-        textarea.focus();
-      }
-
-      function toolkit_memo_create(memo_id, text_get, text_set, args)
-      {
-        var elem_textarea = document.createElement("div");
-
-        elem_textarea.style = "width: 800px;";
-
-        var button = document.createElement("input");
-
-        button.type       = "button";
-        button.id         = memo_id + "_btn";
-        button.className  = "toolkit_small_button";
-        button.value      = "edit";
-
-        button.setAttribute("onclick",
-          "toolkit_memo_click('" +
-          memo_id + "', '" +
-          text_get + "', '" +
-          text_set + "', '" +
-          args + "');"
-        );
-
-        elem_textarea.appendChild(button);
-
-        elem_textarea.appendChild(document.createElement("br"));
-
-        var textarea = document.createElement("div");
-
-        textarea.id = memo_id + "_memo";
-
-        var text;
-
-        eval("text = " + text_get + "(" + args + ");");
-
-        textarea.appendChild(document.createTextNode(text));
-
-        elem_textarea.appendChild(textarea);
-
-        return elem_textarea;
       }
     //-->
     </script>
