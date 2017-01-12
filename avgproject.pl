@@ -598,7 +598,7 @@ sub comments_get_rules {
 			quot => 1
 		},
 
-		"start"    => {
+		"start_d"    => {
 			proc => sub
 			{
 				my $val = shift;
@@ -606,6 +606,23 @@ sub comments_get_rules {
 					? [ "NOW()", undef ]
 					: [ "?",     $val  ]
 				;
+			},
+			quot => 1
+		},
+
+		"start_t"    => {
+			proc => sub
+			{
+				my $val = shift;
+				if ( $val eq "now" )
+				{
+					return [ "NOW()", undef ];
+				}
+				elsif ( $val eq "null" )
+				{
+					return [ "NULL",  undef ];
+				}
+				return [ "?",     $val  ];
 			},
 			quot => 1
 		},

@@ -98,10 +98,13 @@ function toolkit_datetime_picker(get_value, set_value)
     {
       var v = get_value();
 
-      current_value = v ? new Date(v) : new Date();
-    }
+      current_value = v ? new Date(v) : null;
 
-    if (!current_value) current_value = new Date();
+      if (!current_value)
+        current_value = null;
+    }
+    else
+      current_value = null;
 
     el_main = document.createElement("span");
 
@@ -125,12 +128,14 @@ function toolkit_datetime_picker(get_value, set_value)
           (c.top + el_main.offsetHeight) + "px"
         );
 
-        pick_year.value     = current_value.getFullYear();
-        pick_month.value    = current_value.getMonth() + 1;
-        pick_day.value      = current_value.getDate();
-        pick_hours.value    = current_value.getHours();
-        pick_minutes.value  = current_value.getMinutes();
-        pick_seconds.value  = current_value.getSeconds();
+        var d = current_value ? current_value : new Date();
+
+        pick_year.value     = d.getFullYear();
+        pick_month.value    = d.getMonth() + 1;
+        pick_day.value      = d.getDate();
+        pick_hours.value    = d.getHours();
+        pick_minutes.value  = d.getMinutes();
+        pick_seconds.value  = d.getSeconds();
 
         update_calendar();
       }
@@ -181,10 +186,13 @@ function toolkit_datetime_picker(get_value, set_value)
           {
             var v = get_value();
 
-            current_value = v ? new Date(v) : new Date();
-          }
+            current_value = v ? new Date(v) : null;
 
-          if (!current_value) current_value = new Date();
+            if (!current_value)
+              current_value = null;
+          }
+          else
+            current_value = null;
 
           update_btn_value();
         }
@@ -483,12 +491,14 @@ function toolkit_datetime_picker(get_value, set_value)
       b.removeChild(b.firstChild);
 
     b.appendChild(document.createTextNode(
-      pad(d.getDate()) + "." +
-      pad(d.getMonth()+1) + "." +
-      pad(d.getFullYear()) + ", " +
-      pad(d.getHours()) + ":" +
-      pad(d.getMinutes()) + ":" +
-      pad(d.getSeconds())
+      d ? (
+        pad(d.getDate()) + "." +
+        pad(d.getMonth()+1) + "." +
+        pad(d.getFullYear()) + ", " +
+        pad(d.getHours()) + ":" +
+        pad(d.getMinutes()) + ":" +
+        pad(d.getSeconds())
+      ) : "not set"
     ));
   }
 
@@ -622,12 +632,13 @@ function toolkit_label(get_title, set_title)
 
   var button_click_change = function()
   {
-    var text = set_title(el_text_edit.value);
+    if (set_title(el_text_edit.value))
+    {
+      el_text_edit_focus();
+      return;
+    }
 
-    while (el_text.firstChild)
-      el_text.removeChild(el_text.firstChild);
-
-    el_text.appendChild(document.createTextNode(text));
+    set_text();
 
     while (el_button.firstChild)
       el_button.removeChild(el_button.firstChild);
@@ -659,10 +670,7 @@ function toolkit_label(get_title, set_title)
 
     el_text.appendChild(el_text_edit);
 
-    el_text_edit.focus();
-
-    el_text_edit.selectionStart  = 0;
-    el_text_edit.selectionEnd    = el_text_edit.value.length;
+    el_text_edit_focus();
 
     while (el_button.firstChild)
       el_button.removeChild(el_button.firstChild);
@@ -679,9 +687,7 @@ function toolkit_label(get_title, set_title)
 
     el_text = document.createElement("span");
 
-    el_text.appendChild(
-      document.createTextNode(get_title())
-    );
+    set_text();
 
     el_main.appendChild(el_text);
 
@@ -694,6 +700,29 @@ function toolkit_label(get_title, set_title)
     el_button.addEventListener("click", button_click_edit);
 
     el_main.appendChild(el_button);
+  }
+
+  function el_text_edit_focus()
+  {
+    el_text_edit.focus();
+
+    el_text_edit.selectionStart  = 0;
+    el_text_edit.selectionEnd    = el_text_edit.value.length;
+  }
+
+  function set_text()
+  {
+    while (el_text.firstChild)
+      el_text.removeChild(el_text.firstChild);
+
+    var text = get_title();
+
+    if (!text)
+    {
+      text = "not set";
+    }
+
+    el_text.appendChild(document.createTextNode(text));
   }
 
   create();
@@ -753,6 +782,71 @@ function toolkit_label_hm(get_text, set_text)
       }
       set_text(res);
       return mins_to_hr(res);
+    }
+  );
+}
+
+function toolkit_label_hms(text_get, text_set)
+{
+  return toolkit_label(
+    function ()
+    {
+      return text_get();
+    },
+    function (new_text)
+    {
+      var result;
+
+      if (new_text == '')
+        return text_set(null);
+
+      var arr;
+
+      arr = new_text.match(/^ *([0-9]+) */);
+      if (!arr)
+      {
+        alert("error!");
+        return 1;
+      }
+      new_text = new_text.replace(/^ *[0-9]+ */, '');
+      var h = parseInt(arr[1], 10);
+      if (h < 0 || 23 < h)
+      {
+        alert("error: hours must be 0 ... 23 !");
+        return 1;
+      }
+      result = pad(h);
+
+      arr = new_text.match(/^: *([0-9]+) */);
+      if (!arr)
+        return text_set(result + ":00:00");
+      new_text = new_text.replace(/^: *[0-9]+ */, '');
+      var m = parseInt(arr[1], 10);
+      if (m < 0 || 59 < m)
+      {
+        alert("error: minutes must be 0 ... 59 !");
+        return 1;
+      }
+      result += ":" + pad(m);
+
+      arr = new_text.match(/^: *([0-9]+) */);
+      if (!arr)
+        return text_set(result + ":00");
+      new_text = new_text.replace(/^: *[0-9]+ */, '');
+      var s = parseInt(arr[1], 10);
+      if (s < 0 || 59 < s)
+      {
+        alert("error: seconds must be 0 ... 59 !");
+        return 1;
+      }
+
+      if (new_text != "")
+      {
+        alert("error!");
+        return 1;
+      }
+
+      return text_set(result + ":" + pad(s));
     }
   );
 }

@@ -204,23 +204,44 @@
           td.style.setProperty("padding", "3px 3px 3px 10px");
           td.style.setProperty("text-align", "center");
           td.style.setProperty("width", "150px");
-          td.appendChild(toolkit_datetime_picker(
-            function()
-            {
-              return comment.start.replace(" ", "T");
-            },
-            function(new_text)
-            {
-              comment.start = new_text.replace("T", " ");
-            }
-          ));
+          td.appendChild(
+            toolkit_datetime_picker(
+              function()
+              {
+                return comment.start_d;
+              },
+              function(new_text)
+              {
+                comment.start_d = new_text.replace(/T.*/, '');
+              }
+            )
+          );
+          tr.appendChild(td);
+
+          td = document.createElement("td");
+          td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+          td.style.setProperty("font-size", "9pt");
+          td.style.setProperty("padding", "3px 3px 3px 10px");
+          td.style.setProperty("text-align", "center");
+          td.style.setProperty("width", "100px");
+          td.appendChild(
+            toolkit_label_hms(
+              function ()
+              {
+                return comment.start_t;
+              },
+              function (text)
+              {
+                comment.start_t = text;
+              }
+            )
+          );
           tr.appendChild(td);
 
           td = document.createElement("td");
           td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
           td.style.setProperty("font-size", "9pt");
           td.style.setProperty("padding", "0px 15px");
-
           td.appendChild(
             toolkit_label_hm(
               function ()
@@ -233,7 +254,6 @@
               }
             )
           );
-
           tr.appendChild(td);
 
           tbl.appendChild(tr);
@@ -241,7 +261,7 @@
           tr = document.createElement("tr");
 
           td = document.createElement("td");
-          td.setAttribute("colspan", "2");
+          td.setAttribute("colspan", "3");
           td.style.setProperty("border-style", "solid");
           td.style.setProperty("border-width", "1px 0px 0px");
           td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
@@ -319,7 +339,8 @@
                     "&kid=ai" +
                     "&ftask_id=" + item.id +
                     "&fcomment=" + encodeURIComponent(logwork_comment) +
-                    "&fstart=now" +
+                    "&fstart_d=now" +
+                    "&fstart_t=null" +
                     "&fmin=" + logwork_min +
                     "&select=id,start"
                     ,
@@ -463,7 +484,7 @@
 
         start_ajax(
           "avgproject.pl?action=6" +
-          "&fields=id,type,comment,start,min,created,modified" +
+          "&fields=id,type,comment,start_d,start_t,min,created,modified" +
           "&qtask_id=" + item.id
           ,
           function (r, args)
