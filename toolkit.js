@@ -701,6 +701,62 @@ function toolkit_label(get_title, set_title)
   return el_main;
 }
 
+function toolkit_label_hm(get_text, set_text)
+{
+  function mins_to_hr(lm)
+  {
+    if (!lm)
+      return "0m";
+    var s;
+    var h = Math.floor(lm / 60);
+    if (h)
+      s = h + "h";
+    else
+      s = "";
+    var m = lm % 60;
+    if (m)
+    {
+      if (s != '')
+        s += ",";
+      s += m + "m";
+    }
+    return s;
+  }
+
+  return toolkit_label(
+    function()
+    {
+      return mins_to_hr(get_text());
+    },
+    function(text)
+    {
+      var h; var m; var arr; var res = 0;
+      text = text.replace(/^ */,'');
+      arr = text.match(/^[0-9]+h/);
+      if (arr && arr.length == 1)
+      {
+        text = text.replace(/^[0-9]+h/,'');
+        res = parseInt(arr[0].replace("h", ''), 10) * 60;
+      }
+      text = text.replace(/^,/,'');
+      arr = text.match(/^[0-9]+/);
+      if (arr && arr.length == 1)
+      {
+        text = text.replace(/^[0-9]+/,'');
+        res += parseInt(arr[0], 10);
+      }
+      text = text.replace(/^m/,'');
+      if (text != '')
+      {
+        alert("error: bad text: \"" + text + "\"");
+        return mins_to_hr(get_text());
+      }
+      set_text(res);
+      return mins_to_hr(res);
+    }
+  );
+}
+
 function toolkit_memo_create(text_get, text_set)
 {
   var main;
