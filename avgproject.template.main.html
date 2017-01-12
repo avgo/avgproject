@@ -246,7 +246,18 @@
           td.style.setProperty("border-width", "1px 0px 0px");
           td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
           td.style.setProperty("padding", "5px");
-          td.appendChild(document.createTextNode(comment.comment));
+          td.appendChild(
+            toolkit_memo_create(
+              function ()
+              {
+                return comment.comment;
+              },
+              function (t)
+              {
+                comment.comment = t;
+              }
+            )
+          );
           tr.appendChild(td);
 
           tbl.appendChild(tr);
