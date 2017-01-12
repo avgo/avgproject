@@ -12,6 +12,9 @@ use DBI;
 
 
 use constant {
+	INS_UPD_INSERT => 1,
+	INS_UPD_UPDATE => 0,
+
 	INS_UPD_COMMENT  => 0,
 	INS_UPD_LOG_WORK => 1,
 
@@ -59,11 +62,17 @@ my $result_html;
 
 
 sub action_comments_ins_upd {
-	( my $hash, my $action, my $param_h, my $table, my $comment_type ) = @_ ;
+	( my $hash, my $action, my $param_h, my $is_insert,
+			my $table, my $comment_type ) = @_ ;
+
+	# Нужно проверять, определены ли уже эти поля!
 
 	my $fields = [
+		[ "modified", 0 ],
 		[ "type", $comment_type ],
 	];
+
+	push ( @{$fields}, [ "created", 0 ] ) if $is_insert ;
 
 =pod
          КАВЫЧКИ                 [X]
@@ -82,7 +91,8 @@ sub action_comments_ins_upd {
 
 	my $keys = [ ];
 
-	action_ins_upd_cgi($hash, $param_h, $table, $fields, $keys, comments_get_rules);
+	action_ins_upd_cgi($hash, $param_h, $is_insert, $table,
+			$fields, $keys, comments_get_rules);
 }
 
 sub action_comments_select {
@@ -242,8 +252,8 @@ sub action_get_task_list {
 }
 
 sub action_ins_upd {
-	( my $hash, my $table, my $fields,
-			my $keys, my $fields_rules, my $is_insert,
+	( my $hash, my $is_insert, my $table, my $fields,
+			my $keys, my $fields_rules,
 			my $select_after ) = @_ ;
 
 	my $query;
@@ -427,10 +437,9 @@ sub action_ins_upd {
 }
 
 sub action_ins_upd_cgi {
-	(my $hash, my $param_h, my $table,
+	(my $hash, my $param_h, my $is_insert, my $table,
 			my $fields, my $keys, my $fields_rules) = @_ ;
 
-	my $is_insert;
 	my $select_after;
 
 	for my $key ( keys %{$param_h} )
@@ -447,18 +456,14 @@ sub action_ins_upd_cgi {
 			$key_n =~ s/^k//;
 			push @{$keys}, [ $key_n, $param_h->{$key} ] ;
 		}
-		elsif ( $key eq "ins" )
-		{
-			$is_insert = delete $param_h->{ins};
-		}
 		elsif ( $key eq "select" )
 		{
 			$select_after = delete $param_h->{select};
 		}
 	}
 
-	action_ins_upd($hash, $table, $fields, $keys, $fields_rules,
-			$is_insert ? 1 : 0, $select_after);
+	action_ins_upd($hash, $is_insert, $table, $fields, $keys,
+			$fields_rules, $select_after);
 }
 
 sub action_task_add {
@@ -641,6 +646,7 @@ sub main {
 		4          => \&action_task_up,
 		5          => [
 				\&action_comments_ins_upd,
+				INS_UPD_INSERT,
 				"comments",
 				INS_UPD_LOG_WORK
 		],

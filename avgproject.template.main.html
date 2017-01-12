@@ -316,14 +316,11 @@
 
                   start_ajax(
                     "avgproject.pl?action=5" +
-                    "&ins=1" +
                     "&kid=ai" +
                     "&ftask_id=" + item.id +
                     "&fcomment=" + encodeURIComponent(logwork_comment) +
                     "&fstart=now" +
                     "&fmin=" + logwork_min +
-                    "&fcreated=0" +
-                    "&fmodified=0" +
                     "&select=id,start"
                     ,
                     function (r, args)
