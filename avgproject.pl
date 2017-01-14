@@ -671,6 +671,12 @@ sub main {
 				\&action_comments_select,
 				"comments"
 		],
+		7          => [
+				\&action_comments_ins_upd,
+				INS_UPD_UPDATE,
+				"comments",
+				INS_UPD_LOG_WORK
+		],
 	);
 
 	my $handler = $parameters{$action};

@@ -778,10 +778,9 @@ function toolkit_label_hm(get_text, set_text)
       if (text != '')
       {
         alert("error: bad text: \"" + text + "\"");
-        return mins_to_hr(get_text());
+        return 1;
       }
       set_text(res);
-      return mins_to_hr(res);
     }
   );
 }

@@ -189,6 +189,26 @@
 
         function avgp_task_comment_log_work_view(comment, task_id)
         {
+          var updater = (
+            function(action, id)
+            {
+              return {
+                set: function(arr)
+                {
+                  var query =
+                    "avgproject.pl?action=" + action +
+                    "&kid=" + id
+                  ;
+                  for (var i = 0; i < arr.length; ++i)
+                  {
+                    query += "&f" + arr[i][0] + "=" + encodeURIComponent(arr[i][1]);
+                  }
+                  start_ajax(query, function (r, args) { }, { } );
+                }
+              };
+            }
+          )(7, comment.id);
+
           var tbl = document.createElement("table");
 
           tbl.style.setProperty("background-color", "#FFA1A1");
@@ -212,7 +232,12 @@
               },
               function(new_text)
               {
-                comment.start_d = new_text.replace(/T.*/, '');
+                new_text = new_text.replace(/T.*/, '');
+                updater.set( [
+                  [ "start_d", new_text ],
+                ] );
+
+                comment.start_d = new_text;
               }
             )
           );
@@ -232,6 +257,9 @@
               },
               function (text)
               {
+                updater.set( [
+                  [ "start_t", text ],
+                ] );
                 comment.start_t = text;
               }
             )
@@ -250,6 +278,9 @@
               },
               function (text)
               {
+                updater.set( [
+                  [ "min", text ],
+                ] );
                 comment.min = text;
               }
             )
@@ -274,6 +305,9 @@
               },
               function (t)
               {
+                updater.set( [
+                  [ "comment", t ],
+                ] );
                 comment.comment = t;
               }
             )
@@ -340,7 +374,7 @@
                     "&ftask_id=" + item.id +
                     "&fcomment=" + encodeURIComponent(logwork_comment) +
                     "&fstart_d=now" +
-                    "&fstart_t=null" +
+                    "&fstart_t=now" +
                     "&fmin=" + logwork_min +
                     "&select=id,start"
                     ,
