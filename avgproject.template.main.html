@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <title>AVG Project</title>
-    <link rel="stylesheet" type="text/css" href="/toolkit.css"/>
+    <link rel="stylesheet" type="text/css" href="%SITE_DOC_DIR%toolkit.css"/>
     <style>
     .task {
       border: 1px solid;
@@ -41,8 +41,8 @@
       color: #66FFFF;
     }
     </style>
-    <script src="/toolkit.js"></script>
-    <script src="/tree_items.js"></script>
+    <script src="%SITE_DOC_DIR%toolkit.js"></script>
+    <script src="%SITE_DOC_DIR%tree_items.js"></script>
     <script>
     <!--
       var app = {
@@ -67,7 +67,7 @@
       function get_tasks()
       {
         start_ajax(
-          "avgproject.pl?action=1",
+          "?action=1",
           function (r, app)
           {
             var tasks_nodes;
@@ -120,7 +120,7 @@
         new_node.priority = "";
 
         start_ajax(
-          "avgproject.pl?action=2" +
+          "?action=2" +
           "&parent_id=" + new_node.parent_id +
           "&title=" + new_node.title +
           "&description=" + new_node.description +
@@ -166,7 +166,7 @@
             function(new_text)
             {
               start_ajax(
-                "avgproject.pl?action=3" +
+                "?action=3" +
                 "&id=" + item.id +
                 "&title=" + encodeURIComponent(new_text),
                 function (r, args)
@@ -196,7 +196,7 @@
                 set: function(arr)
                 {
                   var query =
-                    "avgproject.pl?action=" + action +
+                    "?action=" + action +
                     "&kid=" + id
                   ;
                   for (var i = 0; i < arr.length; ++i)
@@ -329,7 +329,7 @@
                 return function ()
                 {
                   start_ajax(
-                    "avgproject.pl?action=4" +
+                    "?action=4" +
                     "&id=" + item.id,
                     function (r, args)
                     {
@@ -369,7 +369,7 @@
                   var logwork_min     = 60;
 
                   start_ajax(
-                    "avgproject.pl?action=5" +
+                    "?action=5" +
                     "&kid=ai" +
                     "&ftask_id=" + item.id +
                     "&fcomment=" + encodeURIComponent(logwork_comment) +
@@ -517,7 +517,7 @@
         );
 
         start_ajax(
-          "avgproject.pl?action=6" +
+          "?action=6" +
           "&fields=id,type,comment,start_d,start_t,min,created,modified" +
           "&qtask_id=" + item.id
           ,

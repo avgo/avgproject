@@ -1,7 +1,19 @@
 
+include config
+
+ifeq ($(DEBUG), yes)
+	DOC_DIR=$(PREFIX)/debug/d
+	CGI_BIN=$(PREFIX)/debug/cgi-bin
+else
+	DOC_DIR=$(PREFIX)/d
+	CGI_BIN=$(PREFIX)/cgi-bin
+endif
+
 PKGS = CGI DBI XML::LibXML
 
 all:
+	@echo CGI_BIN=$(CGI_BIN)
+	@echo DOC_DIR=$(DOC_DIR)
 
 install:
 	@echo
@@ -31,6 +43,7 @@ install:
 		fi \
 	done
 	
-	./avgp-compile.pl avgproject.template.main.html /usr/lib/cgi-bin/avgproject.template.main.html
-	cp -vfu avgproject.pl /usr/lib/cgi-bin
-	cp -vfu toolkit.css toolkit.js tree_items.js /var/www/html
+	./avgp-compile.pl avgproject.template.main.html $(CGI_BIN)/avgproject.template.main.html
+	cp -vfu index.pl $(CGI_BIN)
+	cp -vfu toolkit.css toolkit.js tree_items.js $(DOC_DIR)
+
