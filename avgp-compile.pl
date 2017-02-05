@@ -24,7 +24,7 @@ my $site_doc_dir = "d\/";
 
 
 sub main {
-	(my $i_html_filename, my $o_html_filename) = @_;
+	(my $cnf, my $i_html_filename, my $o_html_filename) = @_ ;
 
 	my $html_file;
 
@@ -37,7 +37,7 @@ sub main {
 
 	close $i_html_fd;
 
-	my $repl_html = repl;
+	my $repl_html = $cnf->{debug} ? repl : "" ;
 
 	$html_file =~ s/<versioninfo>/$repl_html/;
 	$html_file =~ s/%SITE_DOC_DIR%/$site_doc_dir/g;
@@ -62,26 +62,26 @@ sub repl {
 
 	my $div = $doc->createElement("div");
 
-	$div->setAttribute("style", "color: #5469FF; font-size: 9pt; text-align: center;");
+	$div->setAttribute("style", "padding: 10px 0px; color: #5469FF; font-size: 9pt;");
 
 	my $span = $doc->createElement("span");
 
-	$span->setAttribute("style", "color: #FC7C7C; font-size: 12pt; font-weight: bold;");
+	$span->setAttribute("style", "padding: 0px 14px 0px 0px; color: #FC7C7C; font-size: 12pt; font-weight: bold;");
 
-	$span->appendChild($doc->createTextNode("ВНИМАНИЕ! "));
+	$span->appendChild($doc->createTextNode("ВНИМАНИЕ!"));
 
 	$div->appendChild($span);
 
 	$div->appendChild($doc->createTextNode(
 		"Это отладочная версия AVG Project, многие функции могут работать в ней " .
-		"некорректно так как версия предназначена для целей тестирования и разработки."
+		"некорректно, так как версия предназначена для целей тестирования и разработки."
 	));
 
 	$result .= $div->toString();
 
-	$div = $doc->createElement("div");
+	my $table = $doc->createElement("table");
 
-	$div->setAttribute("style", "color: #5469FF; font-size: 9pt; text-align: center;");
+	$table->setAttribute("style", "color: #5469FF; font-size: 9pt;");
 
 	for my $el
 	(
@@ -127,32 +127,52 @@ sub repl {
 			}
 		}
 
-		$div->appendChild($doc->createTextNode($title . ": "));
+		my $tr = $doc->createElement("tr");
 
-		$div->appendChild(span($doc, $value));
+		my $td = $doc->createElement("td");
 
-		$div->appendChild($doc->createTextNode(" "));
+		$td->setAttribute("style", "padding: 0px 20px 0px 0px");
+
+		$td->appendChild($doc->createTextNode($title . ":"));
+
+		$tr->appendChild($td);
+
+		$td = $doc->createElement("td");
+
+		$td->setAttribute("style", "color: #FC7C7C; padding: 0px 0px 0px 0px");
+
+		$td->appendChild($doc->createTextNode($value));
+
+		$tr->appendChild($td);
+
+		$table->appendChild($tr);
 	}
 
-	$result .= $div->toString();
+	$result .= $table->toString();
 
 	return $result;
 }
 
-sub span {
-	(my $doc, my $text) = @_;
 
-	my $span = $doc->createElement("span");
 
-	$span->setAttribute("style", "color: #FC7C7C;");
 
-	$span->appendChild($doc->createTextNode($text));
-
-	return $span;
+if ( $#ARGV < 1 )
+{
+	print "error!\n";
+	exit 1;
 }
 
+my %cnf;
 
-
+if ( $ARGV[0] eq "-d" )
+{
+	shift @ARGV;
+	$cnf{debug} = 1;
+}
+else
+{
+	$cnf{debug} = 0;
+}
 
 if ( $#ARGV != 1 )
 {
@@ -160,4 +180,4 @@ if ( $#ARGV != 1 )
 	exit 1;
 }
 
-main @ARGV;
+main \%cnf, @ARGV;

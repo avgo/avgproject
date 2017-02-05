@@ -2,12 +2,13 @@
 include config
 
 ifeq ($(DEBUG), yes)
-	DOC_DIR=$(PREFIX)/debug/d
-	CGI_BIN=$(PREFIX)/debug/cgi-bin
-else
-	DOC_DIR=$(PREFIX)/d
-	CGI_BIN=$(PREFIX)/cgi-bin
+  AVGP_COMP_FLAGS  = -d
+  PREFIX_D         = /debug
 endif
+
+PREFIX_DEBUG = $(PREFIX)$(PREFIX_D)
+DOC_DIR      = $(PREFIX_DEBUG)/d
+CGI_BIN      = $(PREFIX_DEBUG)/cgi-bin
 
 PKGS = CGI DBI XML::LibXML
 
@@ -43,7 +44,7 @@ install:
 		fi \
 	done
 	
-	./avgp-compile.pl avgproject.template.main.html $(CGI_BIN)/avgproject.template.main.html
+	./avgp-compile.pl $(AVGP_COMP_FLAGS) avgproject.template.main.html $(CGI_BIN)/avgproject.template.main.html
 	cp -vfu index.pl $(CGI_BIN)
 	cp -vfu toolkit.css toolkit.js tree_items.js $(DOC_DIR)
 
