@@ -1,6 +1,8 @@
 
 include config
 
+AVGP_COMP_ENABLE = yes
+
 ifeq ($(DEBUG), yes)
   AVGP_COMP_FLAGS  = -d
   PREFIX_D         = /debug
@@ -17,7 +19,11 @@ all:
 	@echo DOC_DIR=$(DOC_DIR)
 
 install:
-	@echo
+ifeq ($(DEBUG), yes)
+	@echo Installing DEBUG version of AVG Project.
+else
+	@echo Installing RELEASE version of AVG Project.
+endif
 	@printf "Checking perl interpreter .. "; \
 	if test "$$(perl -e 'print "helloperl";' 2> /dev/null)" = helloperl; then \
 		echo ok ; \
@@ -43,8 +49,11 @@ install:
 			exit 1; \
 		fi \
 	done
-	
+ifeq ($(AVGP_COMP_ENABLE), yes)
 	./avgp-compile.pl $(AVGP_COMP_FLAGS) avgproject.template.main.html $(CGI_BIN)/avgproject.template.main.html
+else
+	sed s@%SITE_DOC_DIR%@d/@g avgproject.template.main.html > $(CGI_BIN)/avgproject.template.main.html
+endif
 	cp -vfu index.pl $(CGI_BIN)
 	cp -vfu toolkit.css toolkit.js tree_items.js $(DOC_DIR)
 

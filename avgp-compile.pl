@@ -28,7 +28,7 @@ sub main {
 
 	my $html_file;
 
-	open my $i_html_fd, "<", $i_html_filename or die "error: $!\n";
+	open my $i_html_fd, "<:encoding(UTF-8)", $i_html_filename or die "error: $!\n";
 
 	while (my $line = <$i_html_fd>)
 	{
@@ -42,13 +42,13 @@ sub main {
 	$html_file =~ s/<versioninfo>/$repl_html/;
 	$html_file =~ s/%SITE_DOC_DIR%/$site_doc_dir/g;
 
-	open my $o_html_fd, ">", $o_html_filename or die "error: \n";
+	open my $o_html_fd, ">:encoding(UTF-8)", $o_html_filename or die "error: \n";
 
 	print { $o_html_fd } $html_file;
 
 	close $o_html_fd;
 
-	open my $ii_fd, ">", $ii_filename or die "error: \n";
+	open my $ii_fd, ">:encoding(UTF-8)", $ii_filename or die "error: \n";
 
 	print { $ii_fd } $repl_html, "\n";
 
