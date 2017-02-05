@@ -56,9 +56,30 @@ sub main {
 }
 
 sub repl {
+	my $result;
+
 	my $doc = XML::LibXML::Document->new();
 
 	my $div = $doc->createElement("div");
+
+	$div->setAttribute("style", "color: #5469FF; font-size: 9pt; text-align: center;");
+
+	my $span = $doc->createElement("span");
+
+	$span->setAttribute("style", "color: #FC7C7C; font-size: 12pt; font-weight: bold;");
+
+	$span->appendChild($doc->createTextNode("ВНИМАНИЕ! "));
+
+	$div->appendChild($span);
+
+	$div->appendChild($doc->createTextNode(
+		"Это отладочная версия AVG Project, многие функции могут работать в ней " .
+		"некорректно так как версия предназначена для целей тестирования и разработки."
+	));
+
+	$result .= $div->toString();
+
+	$div = $doc->createElement("div");
 
 	$div->setAttribute("style", "color: #5469FF; font-size: 9pt; text-align: center;");
 
@@ -113,7 +134,9 @@ sub repl {
 		$div->appendChild($doc->createTextNode(" "));
 	}
 
-	return $div->toString();
+	$result .= $div->toString();
+
+	return $result;
 }
 
 sub span {
