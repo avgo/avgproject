@@ -37,7 +37,7 @@ sub main {
 
 	close $i_html_fd;
 
-	my $repl_html = $cnf->{debug} ? repl : "" ;
+	my $repl_html = repl $cnf;
 
 	$html_file =~ s/<versioninfo>/$repl_html/;
 	$html_file =~ s/%SITE_DOC_DIR%/$site_doc_dir/g;
@@ -56,6 +56,8 @@ sub main {
 }
 
 sub repl {
+	my $cnf = shift;
+
 	my $result;
 
 	my $doc = XML::LibXML::Document->new();
@@ -64,18 +66,29 @@ sub repl {
 
 	$div->setAttribute("style", "padding: 10px 0px; color: #5469FF; font-size: 9pt;");
 
-	my $span = $doc->createElement("span");
+	my $top_message;
 
-	$span->setAttribute("style", "padding: 0px 14px 0px 0px; color: #FC7C7C; font-size: 12pt; font-weight: bold;");
+	if ( $cnf->{debug} )
+	{
+		my $span = $doc->createElement("span");
 
-	$span->appendChild($doc->createTextNode("ВНИМАНИЕ!"));
+		$span->setAttribute("style", "padding: 0px 14px 0px 0px; color: #FC7C7C; font-size: 12pt; font-weight: bold;");
 
-	$div->appendChild($span);
+		$span->appendChild($doc->createTextNode("ВНИМАНИЕ!"));
 
-	$div->appendChild($doc->createTextNode(
-		"Это отладочная версия AVG Project, многие функции могут работать в ней " .
-		"некорректно, так как версия предназначена для целей тестирования и разработки."
-	));
+		$div->appendChild($span);
+
+		$top_message =
+			"Это отладочная версия AVG Project, многие функции могут работать в ней " .
+			"некорректно, так как версия предназначена для целей тестирования и разработки."
+		;
+	}
+	else
+	{
+		$top_message = "stable version" ;
+	}
+
+	$div->appendChild($doc->createTextNode($top_message));
 
 	$result .= $div->toString();
 
