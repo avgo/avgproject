@@ -96,41 +96,41 @@ sub repl {
 
 	$table->setAttribute("style", "color: #5469FF; font-size: 9pt;");
 
+	my $timeformat = sub {
+		my $t = shift;
+
+		(	my $now_sec,  my $now_min,  my $now_hour,
+			my $now_mday, my $now_mon,  my $now_year,
+			my $now_wday, my $now_yday, my $now_isdst) =
+
+			$t ? localtime ( $t ) : localtime ;
+
+		$now_mon  += 1;
+		$now_year += 1900;
+
+		return sprintf(
+			"%02u.%02u.%04u %02u:%02u:%02u",
+			$now_mday, $now_mon, $now_year,
+			$now_hour, $now_min, $now_sec
+		);
+	};
+
 	for my $el
 	(
-		[ "install",
-			sub {
-				(	my $now_sec,  my $now_min,  my $now_hour,
-					my $now_mday, my $now_mon,  my $now_year,
-					my $now_wday, my $now_yday, my $now_isdst) = localtime;
-
-				$now_mon  += 1;
-				$now_year += 1900;
-
-				return sprintf(
-					"%02u.%02u.%04u %02u:%02u:%02u",
-					$now_mday, $now_mon, $now_year,
-					$now_hour, $now_min, $now_sec
-				);
-			}
-		],
-		[ "git SHA-1",     "%H"  ],
-		[ "author date",   "%ai" ],
-		[ "commiter date", "%ci" ],
-		[ "commit MSG",    "%s"  ],
+		[ "install",       undef, $timeformat ],
+		[ "git SHA-1",     "%H",  undef       ],
+		[ "author date",   "%at", $timeformat ],
+		[ "commiter date", "%ct", $timeformat ],
+		[ "commit MSG",    "%s",  undef       ],
 	)
 	{
-		( my $title, my $code ) = @{$el};
+		( my $title, my $code, my $f ) = @{$el};
 
 		# perl -Mstrict -MIPC::Open2 -e 'open2 my $fd_out, undef, "git", "log", "-1"; while (my $l = <$fd_out>) { print $l; last; }'
 
 		my $value;
 
-		if ( ref($code) eq "CODE" )
-		{
-			$value = &{$code};
-		}
-		else
+		if ( $code )
 		{
 			open2 my $fd_out, undef, "git", "log", "-1", "--pretty=format:" . $code;
 
@@ -139,6 +139,8 @@ sub repl {
 				$value .= $line;
 			}
 		}
+
+		$value = &{$f} ( $value ) if $f ;
 
 		my $tr = $doc->createElement("tr");
 
