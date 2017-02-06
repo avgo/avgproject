@@ -18,6 +18,11 @@ sub timestamp;
 
 
 my $ii_filename  = "install-info.txt";
+my @months = qw(
+	января    февраля  марта   апреля
+	мая       июня     июля    августа
+	сентября  октября  ноября  декабря
+);
 my $site_doc_dir = "d\/";
 
 
@@ -105,12 +110,11 @@ sub repl {
 
 			$t ? localtime ( $t ) : localtime ;
 
-		$now_mon  += 1;
 		$now_year += 1900;
 
 		return sprintf(
-			"%02u.%02u.%04u %02u:%02u:%02u",
-			$now_mday, $now_mon, $now_year,
+			"%02u %s %04u %02u:%02u:%02u",
+			$now_mday, $months[$now_mon], $now_year,
 			$now_hour, $now_min, $now_sec
 		);
 	};
