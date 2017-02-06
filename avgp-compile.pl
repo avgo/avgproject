@@ -119,12 +119,16 @@ sub repl {
 		);
 	};
 
+	my $tr; my $td;
+
+	my $col_index = 0 ; my $col_index_max = 2;
+
 	for my $el
 	(
 		[ "install",       undef, $timeformat ],
-		[ "git SHA-1",     "%H",  undef       ],
 		[ "author date",   "%at", $timeformat ],
 		[ "commiter date", "%ct", $timeformat ],
+		[ "git SHA-1",     "%H",  undef       ],
 		[ "commit MSG",    "%s",  undef       ],
 	)
 	{
@@ -146,11 +150,14 @@ sub repl {
 
 		$value = &{$f} ( $value ) if $f ;
 
-		my $tr = $doc->createElement("tr");
+		if ( $col_index == 0 )
+		{
+			$tr = $doc->createElement("tr");
+		}
 
-		my $td = $doc->createElement("td");
+		$td = $doc->createElement("td");
 
-		$td->setAttribute("style", "padding: 0px 20px 0px 0px");
+		$td->setAttribute("style", "padding: 0px 10px 0px 0px");
 
 		$td->appendChild($doc->createTextNode($title . ":"));
 
@@ -158,11 +165,33 @@ sub repl {
 
 		$td = $doc->createElement("td");
 
-		$td->setAttribute("style", "color: #FC7C7C; padding: 0px 0px 0px 0px");
+		$td->setAttribute("style", "color: #FC7C7C; padding: 0px 30px 0px 0px");
 
 		$td->appendChild($doc->createTextNode($value));
 
 		$tr->appendChild($td);
+
+		if ( $col_index == $col_index_max )
+		{
+			$table->appendChild($tr);
+			$col_index = 0;
+		}
+		else
+		{
+			++$col_index;
+		}
+	}
+
+	if ( 0 < $col_index )
+	{
+		my $max = ( $col_index_max - $col_index + 1 ) * 2 ;
+
+		for ( my $i = 0; $i < $max; ++$i )
+		{
+			$td = $doc->createElement("td");
+			$td->appendChild($doc->createTextNode("_"));
+			$tr->appendChild($td);
+		}
 
 		$table->appendChild($tr);
 	}
