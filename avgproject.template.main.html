@@ -193,17 +193,32 @@
             function(action, id)
             {
               return {
-                set: function(arr)
+                set: function(arr, success)
                 {
                   var query =
-                    "?action=" + action +
+                    "action=" + action +
                     "&kid=" + id
                   ;
                   for (var i = 0; i < arr.length; ++i)
                   {
                     query += "&f" + arr[i][0] + "=" + encodeURIComponent(arr[i][1]);
                   }
-                  start_ajax(query, function (r, args) { }, { } );
+                  var r = new XMLHttpRequest();
+                  r.onreadystatechange = function ()
+                  {
+                    switch (r.readyState)
+                    {
+                    case 4:
+                      if (r.status == 200)
+                        success();
+                      else
+                        alert("request error.");
+                      break;
+                    }
+                  }
+                  r.open("POST", "", true);
+                  r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                  r.send(query);
                 }
               };
             }
@@ -235,9 +250,12 @@
                 new_text = new_text.replace(/T.*/, '');
                 updater.set( [
                   [ "start_d", new_text ],
-                ] );
-
-                comment.start_d = new_text;
+                ],
+                  function()
+                  {
+                    comment.start_d = new_text;
+                  }
+                );
               }
             )
           );
@@ -259,8 +277,12 @@
               {
                 updater.set( [
                   [ "start_t", text ],
-                ] );
-                comment.start_t = text;
+                ],
+                  function()
+                  {
+                    comment.start_t = text;
+                  }
+                );
               }
             )
           );
@@ -280,8 +302,12 @@
               {
                 updater.set( [
                   [ "min", text ],
-                ] );
-                comment.min = text;
+                ],
+                  function()
+                  {
+                    comment.min = text;
+                  }
+                );
               }
             )
           );
@@ -307,8 +333,12 @@
               {
                 updater.set( [
                   [ "comment", t ],
-                ] );
-                comment.comment = t;
+                ],
+                  function()
+                  {
+                    comment.comment = t;
+                  }
+                );
               }
             )
           );
