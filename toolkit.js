@@ -885,12 +885,9 @@ function toolkit_memo_create(text_get, text_set)
         btn.addEventListener("click",
           function()
           {
-            while (div_ta.firstChild)
-              div_ta.removeChild(div_ta.firstChild);
-
             text_set(textarea.value);
 
-            div_ta.appendChild(document.createTextNode(text_get()));
+            update();
           }
         );
 
@@ -912,9 +909,37 @@ function toolkit_memo_create(text_get, text_set)
 
     div_ta = document.createElement("div");
 
-    div_ta.appendChild(document.createTextNode(text_get()));
-
     main.appendChild(div_ta);
+
+    update();
+  }
+
+  function update()
+  {
+    while (div_ta.firstChild)
+      div_ta.removeChild(div_ta.firstChild);
+
+    var new_text = text_get();
+
+    for ( var ind1 = 0; ; ind1 = ind2 + 1)
+    {
+      var ind2 = new_text.indexOf("\n", ind1);
+
+      var ss;
+
+      if (ind2 == -1)
+        ss = new_text.substring(ind1);
+      else if (ind2 > ind1)
+        ss = new_text.substring(ind1, ind2);
+
+      if (ind1 != ind2)
+        div_ta.appendChild(document.createTextNode(ss));
+
+      if (ind2 == -1)
+        break;
+
+      div_ta.appendChild(document.createElement("br"));
+    }
   }
 
   create();
