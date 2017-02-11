@@ -181,20 +181,6 @@ function toolkit_datetime_picker(get_value, set_value)
             pad(pick_minutes.value) + ":" +
             pad(pick_seconds.value)
           );
-
-          if (get_value)
-          {
-            var v = get_value();
-
-            current_value = v ? new Date(v) : null;
-
-            if (!current_value)
-              current_value = null;
-          }
-          else
-            current_value = null;
-
-          update_btn_value();
         }
 
         popup_win.style.setProperty("display", "none");
@@ -617,7 +603,28 @@ function toolkit_datetime_picker(get_value, set_value)
 
   create();
 
-  return el_main;
+  return {
+    element: function ()
+    {
+      return el_main;
+    },
+    update: function()
+    {
+      if (get_value)
+      {
+        var v = get_value();
+
+        current_value = v ? new Date(v) : null;
+
+        if (!current_value)
+          current_value = null;
+      }
+      else
+        current_value = null;
+
+      update_btn_value();
+    },
+  };
 }
 
 function toolkit_label(get_title, set_title)
@@ -637,8 +644,6 @@ function toolkit_label(get_title, set_title)
       el_text_edit_focus();
       return;
     }
-
-    set_text();
 
     while (el_button.firstChild)
       el_button.removeChild(el_button.firstChild);
@@ -727,7 +732,16 @@ function toolkit_label(get_title, set_title)
 
   create();
 
-  return el_main;
+  return {
+    element: function ()
+    {
+      return el_main;
+    },
+    update: function ()
+    {
+      set_text();
+    },
+  };
 }
 
 function toolkit_label_hm(get_text, set_text)
@@ -886,8 +900,6 @@ function toolkit_memo_create(text_get, text_set)
           function()
           {
             text_set(textarea.value);
-
-            update();
           }
         );
 
@@ -911,10 +923,10 @@ function toolkit_memo_create(text_get, text_set)
 
     main.appendChild(div_ta);
 
-    update();
+    update_memo_text();
   }
 
-  function update()
+  function update_memo_text()
   {
     while (div_ta.firstChild)
       div_ta.removeChild(div_ta.firstChild);
@@ -944,7 +956,16 @@ function toolkit_memo_create(text_get, text_set)
 
   create();
 
-  return main;
+  return {
+    element: function()
+    {
+      return main;
+    },
+    update: function()
+    {
+      update_memo_text();
+    },
+  };
 }
 
 /* vim: set expandtab ts=2 : */

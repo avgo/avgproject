@@ -157,32 +157,27 @@
         while (task.firstChild)
           task.removeChild(task.firstChild);
 
-        task.appendChild(
-          toolkit_label(
-            function()
-            {
-              return item.title;
-            },
-            function(new_text)
-            {
-              start_ajax(
-                "?action=3" +
-                "&id=" + item.id +
-                "&title=" + encodeURIComponent(new_text),
-                function (r, args)
-                {
-                },
-                { }
-              );
-
-              item.title = new_text;
-
-              projects_tree_view_update(item);
-
-              return new_text;
-            }
-          )
+        var lbl_title = toolkit_label(
+          function()
+          {
+            return item.title;
+          },
+          function(new_text)
+          {
+            start_ajax(
+              "?action=3" +
+              "&id=" + item.id +
+              "&title=" + encodeURIComponent(new_text),
+              function (r, args)
+              {
+                item.title = new_text;
+                lbl_title.update();
+                projects_tree_view_update(item);
+              }
+            );
+          }
         );
+        task.appendChild(lbl_title.element());
 
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
@@ -239,26 +234,27 @@
           td.style.setProperty("padding", "3px 3px 3px 10px");
           td.style.setProperty("text-align", "center");
           td.style.setProperty("width", "150px");
-          td.appendChild(
-            toolkit_datetime_picker(
-              function()
-              {
-                return comment.start_d;
-              },
-              function(new_text)
-              {
-                new_text = new_text.replace(/T.*/, '');
-                updater.set( [
+          var dtmp_start_d = toolkit_datetime_picker(
+            function()
+            {
+              return comment.start_d;
+            },
+            function(new_text)
+            {
+              new_text = new_text.replace(/T.*/, '');
+              updater.set(
+                [
                   [ "start_d", new_text ],
                 ],
-                  function()
-                  {
-                    comment.start_d = new_text;
-                  }
-                );
-              }
-            )
+                function()
+                {
+                  comment.start_d = new_text;
+                  dtmp_start_d.update();
+                }
+              );
+            }
           );
+          td.appendChild(dtmp_start_d.element());
           tr.appendChild(td);
 
           td = document.createElement("td");
@@ -267,50 +263,54 @@
           td.style.setProperty("padding", "3px 3px 3px 10px");
           td.style.setProperty("text-align", "center");
           td.style.setProperty("width", "100px");
-          td.appendChild(
-            toolkit_label_hms(
-              function ()
-              {
-                return comment.start_t;
-              },
-              function (text)
-              {
-                updater.set( [
+          var label_hms_start_t = toolkit_label_hms(
+            function ()
+            {
+              return comment.start_t;
+            },
+            function (text)
+            {
+              updater.set(
+                [
                   [ "start_t", text ],
                 ],
-                  function()
-                  {
-                    comment.start_t = text;
-                  }
-                );
-              }
-            )
+                function()
+                {
+                  comment.start_t = text;
+                  label_hms_start_t.update();
+                }
+              );
+            }
           );
+          td.appendChild(label_hms_start_t.element());
           tr.appendChild(td);
 
           td = document.createElement("td");
           td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
           td.style.setProperty("font-size", "9pt");
           td.style.setProperty("padding", "0px 15px");
-          td.appendChild(
-            toolkit_label_hm(
-              function ()
-              {
-                return comment.min;
-              },
-              function (text)
-              {
-                updater.set( [
+
+          var lbl_hm_min = toolkit_label_hm(
+            function ()
+            {
+              return comment.min;
+            },
+            function (text)
+            {
+              updater.set(
+                [
                   [ "min", text ],
                 ],
-                  function()
-                  {
-                    comment.min = text;
-                  }
-                );
-              }
-            )
+                function()
+                {
+                  comment.min = text;
+                  lbl_hm_min.update();
+                }
+              );
+            }
           );
+
+          td.appendChild(lbl_hm_min.element());
           tr.appendChild(td);
 
           tbl.appendChild(tr);
@@ -323,25 +323,26 @@
           td.style.setProperty("border-width", "1px 0px 0px");
           td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
           td.style.setProperty("padding", "5px");
-          td.appendChild(
-            toolkit_memo_create(
-              function ()
-              {
-                return comment.comment;
-              },
-              function (t)
-              {
-                updater.set( [
+          var memo_comment = toolkit_memo_create(
+            function ()
+            {
+              return comment.comment;
+            },
+            function (t)
+            {
+              updater.set(
+                [
                   [ "comment", t ],
                 ],
-                  function()
-                  {
-                    comment.comment = t;
-                  }
-                );
-              }
-            )
+                function()
+                {
+                  comment.comment = t;
+                  memo_comment.update();
+                }
+              );
+            }
           );
+          td.appendChild(memo_comment.element());
           tr.appendChild(td);
 
           tbl.appendChild(tr);
@@ -509,19 +510,20 @@
           document.createTextNode(item.parent_id)
         ]);
 
-        create_tr(tbl, "Дата создания:", [
-          toolkit_datetime_picker(
-            function()
-            {
-              return item.dtm_created.replace(" ", "T");
-            },
-            function(new_text)
-            {
-              new_text = new_text.replace("T", " ");
-              item.dtm_created = new_text;
-            }
-          )
-        ]);
+        var dtmp_created = toolkit_datetime_picker(
+          function()
+          {
+            return item.dtm_created.replace(" ", "T");
+          },
+          function(new_text)
+          {
+            new_text = new_text.replace("T", " ");
+            item.dtm_created = new_text;
+            dtmp_created.update();
+          }
+        );
+
+        create_tr(tbl, "Дата создания:", [ dtmp_created.element() ]);
 
         create_tr(tbl, "Приоритет:", [
           document.createTextNode(
@@ -533,18 +535,19 @@
 
         task.appendChild(tbl);
 
-        task.appendChild(
-          toolkit_memo_create(
-            function()
-            {
-              return item.description;
-            },
-            function(v)
-            {
-              item.description = v;
-            }
-          )
+        var memo_desc = toolkit_memo_create(
+          function()
+          {
+            return item.description;
+          },
+          function(v)
+          {
+            item.description = v;
+            memo_desc.update();
+          }
         );
+
+        task.appendChild(memo_desc.element());
 
         start_ajax(
           "?action=6" +
