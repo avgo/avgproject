@@ -182,6 +182,60 @@
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
 
+        function post_updater(url, arr1)
+        {
+          var query1 = ""; var amp1 = 0;
+
+          function append(arr)
+          {
+            return arr[0] + "=" + encodeURIComponent(arr[1]);
+          }
+
+          if (arr1)
+          {
+            for (var i = 0; i < arr1.length; ++i)
+            {
+              if (amp1)
+                query1 += "&";
+              else
+                amp1 = 1;
+              query1 += append(arr1[i]);
+            }
+          }
+
+          return {
+            set: function(arr2, success)
+            {
+              var query2 = query1; var amp2 = amp1;
+
+              for (var i = 0; i < arr2.length; ++i)
+              {
+                if (amp2)
+                  query2 += "&";
+                else
+                  amp2 = 1;
+                query2 += append(arr2[i]);
+              }
+              var r = new XMLHttpRequest();
+              r.onreadystatechange = function ()
+              {
+                switch (r.readyState)
+                {
+                case 4:
+                  if (r.status == 200)
+                    success();
+                  else
+                    alert("request error.");
+                  break;
+                }
+              }
+              r.open("POST", url, true);
+              r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+              r.send(query2);
+            },
+          };
+        }
+
         function avgp_task_comment_log_work_view(comment, task_id)
         {
           var updater = (
