@@ -66,9 +66,11 @@
 
       function get_tasks()
       {
-        start_ajax(
-          "?action=1",
-          function (r, app)
+        post_request("").set(
+          [
+            [ "action", 1 ],
+          ],
+          function (r)
           {
             var tasks_nodes;
 
@@ -77,8 +79,8 @@
             app.tasks = tree_store_build_tree(tasks_nodes, 50, app.cmp);
 
             /*
-              Вообще, функция "tree_store_build_tree" всегда завершается успешно, за
-              исключением случаев когда остаются элементы для которых parent_node найти
+              Вообще, функция "tree_store_build_tree"  всегда  завершается  успешно,  за
+              исключением случаев когда остаются элементы для которых parent_node  найти
               не удалось. Поэтому нужно будет сделать обработку этого случая когда будет
               время.
             */
@@ -86,14 +88,67 @@
             var main = document.getElementById("main");
 
             tree_store_html_gen(main, app.tasks);
-          },
-          app
+          }
         );
       }
 
       function on_load()
       {
         get_tasks(app);
+      }
+
+      function post_request(url, arr1)
+      {
+        var query1 = ""; var amp1 = 0;
+
+        function append(arr)
+        {
+          return arr[0] + "=" + encodeURIComponent(arr[1]);
+        }
+
+        if (arr1)
+        {
+          for (var i = 0; i < arr1.length; ++i)
+          {
+            if (amp1)
+              query1 += "&";
+            else
+              amp1 = 1;
+            query1 += append(arr1[i]);
+          }
+        }
+
+        return {
+          set: function(arr2, success)
+          {
+            var query2 = query1; var amp2 = amp1;
+
+            for (var i = 0; i < arr2.length; ++i)
+            {
+              if (amp2)
+                query2 += "&";
+              else
+                amp2 = 1;
+              query2 += append(arr2[i]);
+            }
+            var r = new XMLHttpRequest();
+            r.onreadystatechange = function ()
+            {
+              switch (r.readyState)
+              {
+              case 4:
+                if (r.status == 200)
+                  success(r);
+                else
+                  alert("request error.");
+                break;
+              }
+            }
+            r.open("POST", url, true);
+            r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            r.send(query2);
+          },
+        };
       }
 
       function projects_tree_view_item_new_subt_click(parent_node)
@@ -119,13 +174,15 @@
 
         new_node.priority = "";
 
-        start_ajax(
-          "?action=2" +
-          "&parent_id=" + new_node.parent_id +
-          "&title=" + new_node.title +
-          "&description=" + new_node.description +
-          "&type=" + new_node.type,
-          function (r, args)
+        post_request("").set(
+          [
+            [ "action",       "2"                  ],
+            [ "parent_id",    new_node.parent_id   ],
+            [ "title",        new_node.title       ],
+            [ "description",  new_node.description ],
+            [ "type",         new_node.type        ],
+          ],
+          function (r)
           {
             var resp;
 
@@ -136,17 +193,13 @@
             if (!resp.id) // Произошла ошибка во время добавления на сервере
               return;
 
-            var new_node    = args.new_node;
-            var parent_node = args.parent_node;
-
             new_node.id           = resp.id;
             new_node.dtm_created  = resp.dtm_created;
 
             tree_store_add(app.tasks, parent_node, new_node, app.cmp);
 
             projects_tree_view_update(new_node);
-          },
-          { parent_node: parent_node, new_node: new_node }
+          }
         );
       }
 
@@ -164,11 +217,13 @@
           },
           function(new_text)
           {
-            start_ajax(
-              "?action=3" +
-              "&id=" + item.id +
-              "&title=" + encodeURIComponent(new_text),
-              function (r, args)
+            post_request("").set(
+              [
+                [ "action", 3        ],
+                [ "id",     item.id  ],
+                [ "title",  new_text ],
+              ],
+              function (r)
               {
                 item.title = new_text;
                 lbl_title.update();
@@ -181,60 +236,6 @@
 
         task.appendChild(document.createElement("br"));
         task.appendChild(document.createElement("br"));
-
-        function post_updater(url, arr1)
-        {
-          var query1 = ""; var amp1 = 0;
-
-          function append(arr)
-          {
-            return arr[0] + "=" + encodeURIComponent(arr[1]);
-          }
-
-          if (arr1)
-          {
-            for (var i = 0; i < arr1.length; ++i)
-            {
-              if (amp1)
-                query1 += "&";
-              else
-                amp1 = 1;
-              query1 += append(arr1[i]);
-            }
-          }
-
-          return {
-            set: function(arr2, success)
-            {
-              var query2 = query1; var amp2 = amp1;
-
-              for (var i = 0; i < arr2.length; ++i)
-              {
-                if (amp2)
-                  query2 += "&";
-                else
-                  amp2 = 1;
-                query2 += append(arr2[i]);
-              }
-              var r = new XMLHttpRequest();
-              r.onreadystatechange = function ()
-              {
-                switch (r.readyState)
-                {
-                case 4:
-                  if (r.status == 200)
-                    success();
-                  else
-                    alert("request error.");
-                  break;
-                }
-              }
-              r.open("POST", url, true);
-              r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-              r.send(query2);
-            },
-          };
-        }
 
         function avgp_task_comment_log_work_view(comment, task_id)
         {
@@ -409,81 +410,90 @@
 
           var arr = [
             [
-              "up", (function(item)
-              {
-                return function ()
+              "up", (
+                function(item)
                 {
-                  start_ajax(
-                    "?action=4" +
-                    "&id=" + item.id,
-                    function (r, args)
-                    {
-                      var par = item.parent;
-
-                      eval("var resp = { " + r.responseText + " }");
-
-                      item.priority = resp.priority;
-
-                      tree_store_unlink(item, item);
-                      tree_store_add(app.tasks, par, item, app.cmp);
-
-                      var bottom_node = tree_store_get_bottom_node(item);
-
-                      var table_bottom = document.getElementById("table_item_" + bottom_node.id);
-
-                      for_each_sibling(item, function (i)
+                  return function ()
+                  {
+                    post_request("").set(
+                      [
+                        [ "action",  4       ],
+                        [ "id",      item.id ],
+                      ],
+                      function (r)
                       {
-                        var table = document.getElementById("table_item_" + i.id);
+                        var par = item.parent;
 
-                        table.remove();
+                        var resp;
 
-                        table_bottom.parentNode.insertBefore(table, table_bottom);
-                      });
-                    },
-                    { }
-                  );
-                };
-              })(item)
+                        eval("resp = { " + r.responseText + " }");
+
+                        item.priority = resp.priority;
+
+                        tree_store_unlink(item, item);
+                        tree_store_add(app.tasks, par, item, app.cmp);
+
+                        var bottom_node = tree_store_get_bottom_node(item);
+
+                        var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+                        for_each_sibling(item,
+                          function (i)
+                          {
+                            var table = document.getElementById("table_item_" + i.id);
+
+                            table.remove();
+
+                            table_bottom.parentNode.insertBefore(table, table_bottom);
+                          }
+                        );
+                      }
+                    );
+                  };
+                }
+              )(item)
             ],
             [
-              "log work", (function(task,item)
-              {
-                return function()
+              "log work", (
+                function(task,item)
                 {
-                  var logwork_comment = "text";
-                  var logwork_min     = 60;
+                  return function()
+                  {
+                    var logwork_comment = "text";
+                    var logwork_min     = 60;
 
-                  start_ajax(
-                    "?action=5" +
-                    "&kid=ai" +
-                    "&ftask_id=" + item.id +
-                    "&fcomment=" + encodeURIComponent(logwork_comment) +
-                    "&fstart_d=now" +
-                    "&fstart_t=now" +
-                    "&fmin=" + logwork_min +
-                    "&select=id,start"
-                    ,
-                    function (r, args)
-                    {
-                      var resp;
+                    post_request("").set(
+                      [
+                        [ "action",    5                ],
+                        [ "kid",       "ai"             ],
+                        [ "ftask_id",  item.id          ],
+                        [ "fcomment",  logwork_comment  ],
+                        [ "fstart_d",  "now"            ],
+                        [ "fstart_t",  "now"            ],
+                        [ "fmin",      logwork_min      ],
+                        [ "select",    "id,start"       ],
+                      ],
+                      function (r)
+                      {
+                        var resp;
 
-                      eval("resp = " + r.responseText);
+                        eval("resp = " + r.responseText);
 
-                      if (!resp.result)
-                        return;
+                        if (!resp.result)
+                          return;
 
-                      task.appendChild(document.createElement("br"));
+                        task.appendChild(document.createElement("br"));
 
-                      var el = resp.result[0];
+                        var el = resp.result[0];
 
-                      task.appendChild(
-                        avgp_task_comment_log_work_view(el, item.id)
-                      );
-                    },
-                    { }
-                  );
-                };
-              })(task,item)
+                        task.appendChild(
+                          avgp_task_comment_log_work_view(el, item.id)
+                        );
+                      }
+                    );
+                  };
+                }
+              )(task, item)
             ],
             [
               "close", (function(item)
@@ -596,19 +606,30 @@
           },
           function(v)
           {
-            item.description = v;
-            memo_desc.update();
+            post_request("").set(
+              [
+                [ "action",      3       ],
+                [ "id",          item.id ],
+                [ "description", v       ],
+              ],
+              function ()
+              {
+                item.description = v;
+                memo_desc.update();
+              }
+            );
           }
         );
 
         task.appendChild(memo_desc.element());
 
-        start_ajax(
-          "?action=6" +
-          "&fields=id,type,comment,start_d,start_t,min,created,modified" +
-          "&qtask_id=" + item.id
-          ,
-          function (r, args)
+        post_request("").set(
+          [
+            [ "action",    6        ],
+            [ "fields",    "id,type,comment,start_d,start_t,min,created,modified" ],
+            [ "qtask_id",  item.id  ],
+          ],
+          function (r)
           {
             var resp;
 
@@ -632,8 +653,7 @@
                 avgp_task_comment_log_work_view(el, item.id)
               );
             }
-          },
-          { }
+          }
         );
       }
 
@@ -666,27 +686,6 @@
 
           table_bottom.parentNode.insertBefore(table, table_bottom);
         }
-      }
-
-      function start_ajax(url, on_succ, ctx)
-      {
-        var r = new XMLHttpRequest();
-
-        r.onreadystatechange = function ()
-        {
-          switch (r.readyState)
-          {
-          case 4:
-            if (r.status == 200)
-            {
-              on_succ(r, ctx);
-            }
-            break;
-          }
-        }
-
-        r.open("GET", url, true);
-        r.send("");
       }
 
       function string_escape_js(s)
