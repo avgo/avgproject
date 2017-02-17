@@ -242,40 +242,13 @@
 
         function avgp_task_comment_log_work_view(comment, task_id)
         {
-          var updater = (
-            function(action, id)
-            {
-              return {
-                set: function(arr, success)
-                {
-                  var query =
-                    "action=" + action +
-                    "&kid=" + id
-                  ;
-                  for (var i = 0; i < arr.length; ++i)
-                  {
-                    query += "&f" + arr[i][0] + "=" + encodeURIComponent(arr[i][1]);
-                  }
-                  var r = new XMLHttpRequest();
-                  r.onreadystatechange = function ()
-                  {
-                    switch (r.readyState)
-                    {
-                    case 4:
-                      if (r.status == 200)
-                        success();
-                      else
-                        alert("request error.");
-                      break;
-                    }
-                  }
-                  r.open("POST", "", true);
-                  r.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                  r.send(query);
-                }
-              };
-            }
-          )(7, comment.id);
+          var updater = post_request(
+            "",
+            [
+              [ "action",  7           ],
+              [ "kid",     comment.id  ],
+            ]
+          );
 
           var tbl = document.createElement("table");
 
@@ -302,7 +275,7 @@
               new_text = new_text.replace(/T.*/, '');
               updater.set(
                 [
-                  [ "start_d", new_text ],
+                  [ "fstart_d", new_text ],
                 ],
                 function()
                 {
@@ -330,7 +303,7 @@
             {
               updater.set(
                 [
-                  [ "start_t", text ],
+                  [ "fstart_t", text ],
                 ],
                 function()
                 {
@@ -357,7 +330,7 @@
             {
               updater.set(
                 [
-                  [ "min", text ],
+                  [ "fmin", text ],
                 ],
                 function()
                 {
@@ -390,7 +363,7 @@
             {
               updater.set(
                 [
-                  [ "comment", t ],
+                  [ "fcomment", t ],
                 ],
                 function()
                 {
