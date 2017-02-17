@@ -66,7 +66,7 @@
 
       function get_tasks()
       {
-        post_request("").set(
+        post_request().set(
           [
             [ "action", 1 ],
           ],
@@ -99,6 +99,9 @@
 
       function post_request(url, arr1)
       {
+        if (!url)
+          url = "";
+
         var query1 = ""; var amp1 = 0;
 
         function append(arr)
@@ -174,7 +177,7 @@
 
         new_node.priority = "";
 
-        post_request("").set(
+        post_request().set(
           [
             [ "action",       "2"                  ],
             [ "parent_id",    new_node.parent_id   ],
@@ -217,7 +220,7 @@
           },
           function(new_text)
           {
-            post_request("").set(
+            post_request().set(
               [
                 [ "action", 3        ],
                 [ "id",     item.id  ],
@@ -415,7 +418,7 @@
                 {
                   return function ()
                   {
-                    post_request("").set(
+                    post_request().set(
                       [
                         [ "action",  4       ],
                         [ "id",      item.id ],
@@ -462,7 +465,7 @@
                     var logwork_comment = "text";
                     var logwork_min     = 60;
 
-                    post_request("").set(
+                    post_request().set(
                       [
                         [ "action",    5                ],
                         [ "kid",       "ai"             ],
@@ -606,7 +609,7 @@
           },
           function(v)
           {
-            post_request("").set(
+            post_request().set(
               [
                 [ "action",      3       ],
                 [ "id",          item.id ],
@@ -623,7 +626,7 @@
 
         task.appendChild(memo_desc.element());
 
-        post_request("").set(
+        post_request().set(
           [
             [ "action",    6        ],
             [ "fields",    "id,type,comment,start_d,start_t,min,created,modified" ],
