@@ -663,20 +663,6 @@
           table_bottom.parentNode.insertBefore(table, table_bottom);
         }
       }
-
-      function string_escape_js(s)
-      {
-        return s.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"").replace(/'/g, "\\'");
-      }
-
-      function tasks_get_task_by_id(id)
-      {
-        var item;
-
-        eval("item = app.tasks.items.item_" + id + ";");
-
-        return item;
-      }
     //-->
     </script>
   </head>
