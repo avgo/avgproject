@@ -663,23 +663,176 @@
           table_bottom.parentNode.insertBefore(table, table_bottom);
         }
       }
+
+      var avgproject =
+      {
+        left_right: function(cmp)
+        {
+          var table = document.createElement("table");
+
+          table.setAttribute("border", "0");
+
+          var tr = document.createElement("tr");
+
+          var td_tvt = document.createElement("td");
+
+          td_tvt.style.setProperty("vertical-align", "top");
+          td_tvt.style.setProperty("width", "32%");
+
+          tr.appendChild(td_tvt);
+
+          var td = document.createElement("td");
+
+          td.setAttribute("id", "task");
+
+          td.style.setProperty("vertical-align", "top");
+
+          tr.appendChild(td);
+
+          table.appendChild(tr);
+
+          avgproject.tree_view_tasks(td_tvt, td, 50, cmp);
+
+          return table;
+        },
+        tree_view_tasks: function(container, task_ws, offset_step, cmp)
+        {
+          function append_nodes(tree_node)
+          {
+            for ( var i = tree_node.first; i; i = i.next)
+            {
+              if (i.parent.id == 0)
+                i.offset = 0;
+              else
+                i.offset = tree_node.offset + offset_step;
+
+              container.appendChild(new_tv_node(i));
+
+              if (i.first)
+                append_nodes(i);
+            }
+          }
+
+          function new_tv_node(tree_node)
+          {
+            var s;
+            var title;
+
+            if (tree_node.id == 0)
+            {
+              s = "p";
+              title = "+[ADD]";
+            }
+            else
+            {
+              switch (tree_node.type)
+              {
+                case node_type.project:
+                  s = "p";
+                  break;
+                case node_type.task:
+                  s = "t";
+                  break;
+                default:
+                  s = "p";
+                  break;
+              }
+              title = tree_node.title + " (" + tree_node.id + ", " + tree_node.parent_id + ")";
+            }
+
+            var task_style        = "task_" + s;
+            var task_btn_style    = "task_btn_" + s;
+
+            var table = document.createElement("table");
+
+            table.setAttribute("border", "0");
+
+            var tr = document.createElement("tr");
+
+            var td = document.createElement("td");
+
+            td.setAttribute("width", tree_node.offset ? tree_node.offset : 0 );
+
+            td.appendChild(document.createTextNode("\xA0"));
+
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+
+            td.setAttribute("class", "task " + task_style);
+
+            var span = document.createElement("span");
+
+            span.setAttribute("class", "task_btn " + task_btn_style);
+
+            span.appendChild(document.createTextNode(title));
+
+            td.appendChild(span);
+
+            if (tree_node.id > 0)
+            {
+              td.appendChild(document.createElement("br"));
+
+              span = document.createElement("span");
+
+              span.setAttribute("class", "task_btn task_btn_s");
+
+              span.appendChild(document.createTextNode("(new subtask)"));
+
+              td.appendChild(span);
+            }
+
+            tr.appendChild(td);
+
+            table.appendChild(tr);
+
+            return table;
+          }
+
+          post_request().set(
+            [
+              [ "action", 1 ],
+            ],
+            function (r)
+            {
+              var tasks_nodes;
+
+              eval("tasks_nodes = [\n" + r.responseText + "\n];");
+
+              var tasks = tree_store_build_tree(tasks_nodes, cmp);
+
+              /*
+                Вообще, функция "tree_store_build_tree"  всегда  завершается  успешно,  за
+                исключением случаев когда остаются элементы для которых parent_node  найти
+                не удалось. Поэтому нужно будет сделать обработку этого случая когда будет
+                время.
+              */
+
+              append_nodes(tasks);
+
+              container.appendChild(new_tv_node(tasks));
+            }
+          );
+        },
+      };
+
+      window.onload =
+        function()
+        {
+          document.body.appendChild(avgproject.left_right(
+            function(a, b)
+            {
+              return a.priority < b.priority;
+            }
+          ));
+        }
+      ;
     //-->
     </script>
   </head>
-  <body onload="on_load()">
+  <body>
     <versioninfo>
     <h1>AVG Project</h1>
-    <table border="0">
-      <tr>
-        <td style="vertical-align: top; width: 32%;">
-          <div id="main"></div>
-        </td>
-        <td style="vertical-align: top;">
-          <div id="task"></div>
-        </td>
-      </tr>
-    </table>
-    <div id="log"></div>
   </body>
 </html>
 

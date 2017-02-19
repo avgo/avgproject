@@ -115,7 +115,7 @@ function tree_store_unlink(begin, end)
   end.next = null;
 }
 
-function tree_store_build_tree(tree_items, offset_step, cmp)
+function tree_store_build_tree(tree_items, cmp)
 {
   /*
       Массив на самом деле делится на две части: в верхней части уже
@@ -129,7 +129,6 @@ function tree_store_build_tree(tree_items, offset_step, cmp)
   var b_tree = {
     id: 0,
     items: { },
-    offset_step: offset_step,
     title: "[root]",
   };
 
@@ -236,53 +235,6 @@ function tree_store_get_new_id(node, id)
   }
 
   return id;
-}
-
-function tree_store_html_gen(elem, b_tree)
-{
-  var args = {
-    b_tree: b_tree,
-    html: "",
-    offset: 0,
-  };
-
-  tree_store_html_gen2(b_tree, args);
-
-  args.html +=
-    "<table border=\"0\" id=\"table_item_0\">\n" +
-    "<tr>\n" +
-    "<td width=" + args.offset + ">&nbsp;</td>\n" +
-    "<td class=\"task task_p\">" +
-    "<span class=\"task_btn task_btn_p\" onclick=\"projects_tree_view_item_new_subt_click(app.tasks);\">+[ADD]</span><br>\n" +
-    "</td>" +
-    "</tr>\n" +
-    "</table>\n"
-  ;
-
-  elem.innerHTML = args.html;
-}
-
-function tree_store_html_gen2(parent_node, args)
-{
-  for (var i = parent_node.first; i; i = i.next)
-  {
-    i.offset = args.offset;
-
-    args.html +=
-      "<table id=\"table_item_" + i.id + "\" border=\"0\">\n" +
-      gen_html_for_node(i) +
-      "</table>\n"
-    ;
-
-    if (i.first)
-    {
-      args.offset += args.b_tree.offset_step;
-
-      tree_store_html_gen2(i, args);
-
-      args.offset -= args.b_tree.offset_step;
-    }
-  }
 }
 
 function tree_store_search_by_id(b_tree, id)
