@@ -22,9 +22,8 @@
       background-color: #9aa9fc;
     }
     .task_btn {
+      color: #FFFFFF;
       font-family: Verdana;
-      text-decoration: underline;
-      cursor: pointer;
     }
     .task_btn_p {
       font-size: 16pt;
@@ -761,25 +760,43 @@
 
             td.setAttribute("class", "task " + task_style);
 
-            var span = document.createElement("span");
+            var a_href = document.createElement("a");
 
-            span.setAttribute("class", "task_btn " + task_btn_style);
+            a_href.addEventListener("click",
+              function(e)
+              {
+                e.preventDefault();
+              }
+            );
 
-            span.appendChild(document.createTextNode(title));
+            a_href.setAttribute("class", "task_btn " + task_btn_style);
 
-            td.appendChild(span);
+            a_href.setAttribute("href", tree_node.id);
+
+            a_href.appendChild(document.createTextNode(title));
+
+            td.appendChild(a_href);
 
             if (tree_node.id > 0)
             {
               td.appendChild(document.createElement("br"));
 
-              span = document.createElement("span");
+              a_href = document.createElement("a");
 
-              span.setAttribute("class", "task_btn task_btn_s");
+              a_href.addEventListener("click",
+                function(e)
+                {
+                  e.preventDefault();
+                }
+              );
 
-              span.appendChild(document.createTextNode("(new subtask)"));
+              a_href.setAttribute("href", tree_node.id);
 
-              td.appendChild(span);
+              a_href.setAttribute("class", "task_btn task_btn_s");
+
+              a_href.appendChild(document.createTextNode("(new subtask)"));
+
+              td.appendChild(a_href);
             }
 
             tr.appendChild(td);
