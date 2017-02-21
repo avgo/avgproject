@@ -267,6 +267,430 @@
 
           return table;
         },
+        task_ws: function(task, item)
+        {
+          while (task.firstChild)
+            task.removeChild(task.firstChild);
+
+          var lbl_title = toolkit_label(
+            function()
+            {
+              return item.title;
+            },
+            function(new_text)
+            {
+              post_request().set(
+                [
+                  [ "action", 3        ],
+                  [ "id",     item.id  ],
+                  [ "title",  new_text ],
+                ],
+                function (r)
+                {
+                  item.title = new_text;
+                  lbl_title.update();
+                  projects_tree_view_update(item);
+                }
+              );
+            }
+          );
+          task.appendChild(lbl_title.element());
+
+          task.appendChild(document.createElement("br"));
+          task.appendChild(document.createElement("br"));
+
+          function avgp_task_comment_log_work_view(comment, task_id)
+          {
+            var updater = post_request(
+              "",
+              [
+                [ "action",  7           ],
+                [ "kid",     comment.id  ],
+              ]
+            );
+
+            var tbl = document.createElement("table");
+
+            tbl.style.setProperty("background-color", "#FFA1A1");
+            tbl.style.setProperty("border-radius", "8px");
+            tbl.style.setProperty("color", "#630000");
+            tbl.style.setProperty("width", "500px");
+
+            var tr, td;
+
+            tr = document.createElement("tr");
+
+            td = document.createElement("td");
+            td.style.setProperty("padding", "3px 3px 3px 10px");
+            td.style.setProperty("text-align", "center");
+            td.style.setProperty("width", "150px");
+            var dtmp_start_d = toolkit_datetime_picker(
+              function()
+              {
+                return comment.start_d;
+              },
+              function(new_text)
+              {
+                new_text = new_text.replace(/T.*/, '');
+                updater.set(
+                  [
+                    [ "fstart_d", new_text ],
+                  ],
+                  function()
+                  {
+                    comment.start_d = new_text;
+                    dtmp_start_d.update();
+                  }
+                );
+              }
+            );
+            td.appendChild(dtmp_start_d.element());
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+            td.style.setProperty("font-size", "9pt");
+            td.style.setProperty("padding", "3px 3px 3px 10px");
+            td.style.setProperty("text-align", "center");
+            td.style.setProperty("width", "100px");
+            var label_hms_start_t = toolkit_label_hms(
+              function ()
+              {
+                return comment.start_t;
+              },
+              function (text)
+              {
+                updater.set(
+                  [
+                    [ "fstart_t", text ],
+                  ],
+                  function()
+                  {
+                    comment.start_t = text;
+                    label_hms_start_t.update();
+                  }
+                );
+              }
+            );
+            td.appendChild(label_hms_start_t.element());
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+            td.style.setProperty("font-size", "9pt");
+            td.style.setProperty("padding", "0px 15px");
+
+            var lbl_hm_min = toolkit_label_hm(
+              function ()
+              {
+                return comment.min;
+              },
+              function (text)
+              {
+                updater.set(
+                  [
+                    [ "fmin", text ],
+                  ],
+                  function()
+                  {
+                    comment.min = text;
+                    lbl_hm_min.update();
+                  }
+                );
+              }
+            );
+
+            td.appendChild(lbl_hm_min.element());
+            tr.appendChild(td);
+
+            tbl.appendChild(tr);
+
+            tr = document.createElement("tr");
+
+            td = document.createElement("td");
+            td.setAttribute("colspan", "3");
+            td.style.setProperty("border-style", "solid");
+            td.style.setProperty("border-width", "1px 0px 0px");
+            td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
+            td.style.setProperty("padding", "5px");
+            var memo_comment = toolkit_memo_create(
+              function ()
+              {
+                return comment.comment;
+              },
+              function (t)
+              {
+                updater.set(
+                  [
+                    [ "fcomment", t ],
+                  ],
+                  function()
+                  {
+                    comment.comment = t;
+                    memo_comment.update();
+                  }
+                );
+              }
+            );
+            td.appendChild(memo_comment.element());
+            tr.appendChild(td);
+
+            tbl.appendChild(tr);
+
+            return tbl;
+          }
+
+          task.appendChild((function(){
+            var tbl = document.createElement("table");
+
+            var arr = [
+              [
+                "up", (
+                  function(item)
+                  {
+                    return function ()
+                    {
+                      post_request().set(
+                        [
+                          [ "action",  4       ],
+                          [ "id",      item.id ],
+                        ],
+                        function (r)
+                        {
+                          var par = item.parent;
+
+                          var resp;
+
+                          eval("resp = { " + r.responseText + " }");
+
+                          item.priority = resp.priority;
+
+                          tree_store_unlink(item, item);
+                          tree_store_add(app.tasks, par, item, app.cmp);
+
+                          var bottom_node = tree_store_get_bottom_node(item);
+
+                          var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+                          for_each_sibling(item,
+                            function (i)
+                            {
+                              var table = document.getElementById("table_item_" + i.id);
+
+                              table.remove();
+
+                              table_bottom.parentNode.insertBefore(table, table_bottom);
+                            }
+                          );
+                        }
+                      );
+                    };
+                  }
+                )(item)
+              ],
+              [
+                "log work", (
+                  function(task,item)
+                  {
+                    return function()
+                    {
+                      var logwork_comment = "text";
+                      var logwork_min     = 60;
+
+                      post_request().set(
+                        [
+                          [ "action",    5                ],
+                          [ "kid",       "ai"             ],
+                          [ "ftask_id",  item.id          ],
+                          [ "fcomment",  logwork_comment  ],
+                          [ "fstart_d",  "now"            ],
+                          [ "fstart_t",  "now"            ],
+                          [ "fmin",      logwork_min      ],
+                          [ "select",    "id,start"       ],
+                        ],
+                        function (r)
+                        {
+                          var resp;
+
+                          eval("resp = " + r.responseText);
+
+                          if (!resp.result)
+                            return;
+
+                          task.appendChild(document.createElement("br"));
+
+                          var el = resp.result[0];
+
+                          task.appendChild(
+                            avgp_task_comment_log_work_view(el, item.id)
+                          );
+                        }
+                      );
+                    };
+                  }
+                )(task, item)
+              ],
+              [
+                "close", (function(item)
+                {
+                  return function()
+                  {
+                    alert("close \"" + item.title + "\"!");
+                  };
+                })(item)
+              ],
+            ];
+
+            var tr = document.createElement("tr");
+
+            for (var i = 0; i < arr.length; ++i)
+            {
+              (function(){
+                var td = document.createElement("td");
+
+                var text = arr[i][0];
+
+                var btn = document.createElement("button");
+
+                btn.style.setProperty("background-color", "rgb(215, 240, 255)");
+                btn.style.setProperty("border", "0px none");
+                btn.style.setProperty("color", "rgb(0, 118, 189)");
+                btn.style.setProperty("cursor", "pointer");
+                btn.style.setProperty("padding", "4px 40px");
+
+                btn.addEventListener("click", arr[i][1]);
+
+                btn.appendChild(document.createTextNode(text));
+
+                td.appendChild(btn);
+
+                tr.appendChild(td);
+              })();
+            }
+
+            tbl.appendChild(tr);
+
+            return tbl;
+          })());
+
+          task.appendChild(document.createElement("br"));
+
+          function create_tr(tbl, text, node)
+          {
+            var tr, td;
+
+            tr = document.createElement("tr");
+
+            td = document.createElement("td");
+            td.className = "task_field";
+            td.appendChild(document.createTextNode(text));
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            td.className = "task_field";
+
+            for (var i = 0; i < node.length; ++i)
+            {
+              td.appendChild(node[i]);
+            }
+
+            tr.appendChild(td);
+
+            tbl.appendChild(tr);
+          }
+
+          var tbl = document.createElement("table");
+
+          create_tr(tbl, "ID:", [
+            document.createTextNode(item.id)
+          ]);
+
+          create_tr(tbl, "Parent ID:", [
+            document.createTextNode(item.parent_id)
+          ]);
+
+          var dtmp_created = toolkit_datetime_picker(
+            function()
+            {
+              return item.dtm_created.replace(" ", "T");
+            },
+            function(new_text)
+            {
+              new_text = new_text.replace("T", " ");
+              item.dtm_created = new_text;
+              dtmp_created.update();
+            }
+          );
+
+          create_tr(tbl, "Дата создания:", [ dtmp_created.element() ]);
+
+          create_tr(tbl, "Приоритет:", [
+            document.createTextNode(
+              item.priority ? dtm_fmt_def(
+                new Date(item.priority.replace(" ","T"))
+              ) : ""
+            )
+          ]);
+
+          task.appendChild(tbl);
+
+          var memo_desc = toolkit_memo_create(
+            function()
+            {
+              return item.description;
+            },
+            function(v)
+            {
+              post_request().set(
+                [
+                  [ "action",      3       ],
+                  [ "id",          item.id ],
+                  [ "description", v       ],
+                ],
+                function ()
+                {
+                  item.description = v;
+                  memo_desc.update();
+                }
+              );
+            }
+          );
+
+          task.appendChild(memo_desc.element());
+
+          post_request().set(
+            [
+              [ "action",    6        ],
+              [ "fields",    "id,type,comment,start_d,start_t,min,created,modified" ],
+              [ "qtask_id",  item.id  ],
+            ],
+            function (r)
+            {
+              var resp;
+
+              eval("resp = " + r.responseText);
+
+              task.appendChild(document.createElement("br"));
+
+              task.appendChild(document.createTextNode("Коментарии " + resp.result.length + " штук."));
+
+              task.appendChild(document.createElement("br"));
+
+              var arr = resp.result;
+
+              for (var i = 0; i < arr.length; ++i)
+              {
+                var el = arr[i];
+
+                task.appendChild(document.createElement("br"));
+
+                task.appendChild(
+                  avgp_task_comment_log_work_view(el, item.id)
+                );
+              }
+            }
+          );
+        },
         tree_view_tasks: function(container, task_ws, offset_step, cmp)
         {
           function append_nodes(tree_node)
@@ -338,6 +762,7 @@
             a_href.addEventListener("click",
               function(e)
               {
+
                 e.preventDefault();
               }
             );
