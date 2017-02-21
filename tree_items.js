@@ -9,51 +9,6 @@ var node_type_str = {
   2: "task",
 };
 
-function gen_html_for_node(i)
-{
-    var task_style;
-    var task_btn_style;
-
-    switch (i.type)
-    {
-      case node_type.project:
-        task_style        = "task_p";
-        task_btn_style    = "task_btn_p";
-        break;
-      case node_type.task:
-        task_style        = "task_t";
-        task_btn_style    = "task_btn_t";
-        break;
-      default:
-        break;
-    }
-
-    return (
-      "<tr>\n" +
-      "<td width=" + i.offset + ">&nbsp;</td>\n" +
-      "<td class=\"task " + task_style + "\">" +
-
-      "<span " +
-        "class=\"task_btn " + task_btn_style + "\" " +
-        "onclick=\"projects_tree_view_item_project_click(app.tasks.items.item_" + i.id + ");\"" +
-      ">" +
-        i.title + " (" + i.id + ", " + i.parent_id + ")" +
-      "</span>\n" +
-      "<br>\n" +
-
-      "<span " +
-        "class=\"task_btn task_btn_s\" " +
-        "onclick=\"projects_tree_view_item_new_subt_click(app.tasks.items.item_" + i.id + ");\"" +
-      ">" +
-        "(new subtask)" +
-      "</span>" +
-      "<br>\n" +
-
-      "</td>" +
-      "</tr>\n"
-    );
-}
-
 function tree_store_add(tree, parent_node, new_node, cmp)
 {
   var next;

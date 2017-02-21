@@ -44,13 +44,6 @@
     <script src="%SITE_DOC_DIR%tree_items.js"></script>
     <script>
     <!--
-      var app = {
-        cmp: function(a,b)
-        {
-          return a.priority < b.priority;
-        },
-      };
-
       function dtm_fmt_def(d)
       {
         return (
@@ -61,39 +54,6 @@
           pad(d.getMinutes()) + ":" +
           pad(d.getSeconds())
         );
-      }
-
-      function get_tasks()
-      {
-        post_request().set(
-          [
-            [ "action", 1 ],
-          ],
-          function (r)
-          {
-            var tasks_nodes;
-
-            eval("tasks_nodes = [\n" + r.responseText + "\n];");
-
-            app.tasks = tree_store_build_tree(tasks_nodes, 50, app.cmp);
-
-            /*
-              Вообще, функция "tree_store_build_tree"  всегда  завершается  успешно,  за
-              исключением случаев когда остаются элементы для которых parent_node  найти
-              не удалось. Поэтому нужно будет сделать обработку этого случая когда будет
-              время.
-            */
-
-            var main = document.getElementById("main");
-
-            tree_store_html_gen(main, app.tasks);
-          }
-        );
-      }
-
-      function on_load()
-      {
-        get_tasks(app);
       }
 
       function post_request(url, arr1)
@@ -151,89 +111,6 @@
             r.send(query2);
           },
         };
-      }
-
-      function projects_tree_view_item_new_subt_click(parent_node)
-      {
-        var new_node = {
-          parent_id: parent_node.id,
-        };
-
-        if (app.tasks == parent_node)
-        {
-          new_node.title        = "Проект";
-          new_node.description  = "Описание проекта.";
-          new_node.type         = node_type.project;
-          new_node.offset       = 0;
-        }
-        else
-        {
-          new_node.title        = "задача";
-          new_node.description  = "Описание задачи.";
-          new_node.type         = node_type.task;
-          new_node.offset       = parent_node.offset + app.tasks.offset_step;
-        }
-
-        new_node.priority = "";
-
-        post_request().set(
-          [
-            [ "action",       "2"                  ],
-            [ "parent_id",    new_node.parent_id   ],
-            [ "title",        new_node.title       ],
-            [ "description",  new_node.description ],
-            [ "type",         new_node.type        ],
-          ],
-          function (r)
-          {
-            var resp;
-
-            var cmd = "resp = " + r.responseText + ";";
-
-            eval(cmd);
-
-            if (!resp.id) // Произошла ошибка во время добавления на сервере
-              return;
-
-            new_node.id           = resp.id;
-            new_node.dtm_created  = resp.dtm_created;
-
-            tree_store_add(app.tasks, parent_node, new_node, app.cmp);
-
-            projects_tree_view_update(new_node);
-          }
-        );
-      }
-
-      function projects_tree_view_update(node)
-      {
-        var is_new;
-
-        var table = document.getElementById("table_item_" + node.id);
-
-        if (table)
-        {
-          is_new = false;
-          while (table.firstChild)
-            table.removeChild(table.firstChild);
-        }
-        else
-        {
-          is_new = true;
-          table = document.createElement("table");
-          table.id = "table_item_" + node.id;
-        }
-
-        table.innerHTML = gen_html_for_node(node);
-
-        if (is_new)
-        {
-          var bottom_node = tree_store_get_bottom_node(node);
-
-          var table_bottom = document.getElementById("table_item_" + bottom_node.id);
-
-          table_bottom.parentNode.insertBefore(table, table_bottom);
-        }
       }
 
       var avgproject =
@@ -429,7 +306,6 @@
                 {
                   item.title = new_text;
                   lbl_title.update();
-                  projects_tree_view_update(item);
                 }
               );
             }
