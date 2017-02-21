@@ -445,99 +445,89 @@
 
             var arr = [
               [
-                "up", (
-                  function(item)
-                  {
-                    return function ()
-                    {
-                      post_request().set(
-                        [
-                          [ "action",  4       ],
-                          [ "id",      item.id ],
-                        ],
-                        function (r)
-                        {
-                          var par = item.parent;
-
-                          var resp;
-
-                          eval("resp = { " + r.responseText + " }");
-
-                          item.priority = resp.priority;
-
-                          tree_store_unlink(item, item);
-                          tree_store_add(app.tasks, par, item, app.cmp);
-
-                          var bottom_node = tree_store_get_bottom_node(item);
-
-                          var table_bottom = document.getElementById("table_item_" + bottom_node.id);
-
-                          for_each_sibling(item,
-                            function (i)
-                            {
-                              var table = document.getElementById("table_item_" + i.id);
-
-                              table.remove();
-
-                              table_bottom.parentNode.insertBefore(table, table_bottom);
-                            }
-                          );
-                        }
-                      );
-                    };
-                  }
-                )(item)
-              ],
-              [
-                "log work", (
-                  function(task,item)
-                  {
-                    return function()
-                    {
-                      var logwork_comment = "text";
-                      var logwork_min     = 60;
-
-                      post_request().set(
-                        [
-                          [ "action",    5                ],
-                          [ "kid",       "ai"             ],
-                          [ "ftask_id",  item.id          ],
-                          [ "fcomment",  logwork_comment  ],
-                          [ "fstart_d",  "now"            ],
-                          [ "fstart_t",  "now"            ],
-                          [ "fmin",      logwork_min      ],
-                          [ "select",    "id,start"       ],
-                        ],
-                        function (r)
-                        {
-                          var resp;
-
-                          eval("resp = " + r.responseText);
-
-                          if (!resp.result)
-                            return;
-
-                          task.appendChild(document.createElement("br"));
-
-                          var el = resp.result[0];
-
-                          task.appendChild(
-                            avgp_task_comment_log_work_view(el, item.id)
-                          );
-                        }
-                      );
-                    };
-                  }
-                )(task, item)
-              ],
-              [
-                "close", (function(item)
+                "up",
+                function ()
                 {
-                  return function()
-                  {
-                    alert("close \"" + item.title + "\"!");
-                  };
-                })(item)
+                  post_request().set(
+                    [
+                      [ "action",  4       ],
+                      [ "id",      item.id ],
+                    ],
+                    function (r)
+                    {
+                      var par = item.parent;
+
+                      var resp;
+
+                      eval("resp = { " + r.responseText + " }");
+
+                      item.priority = resp.priority;
+
+                      tree_store_unlink(item, item);
+                      tree_store_add(app.tasks, par, item, app.cmp);
+
+                      var bottom_node = tree_store_get_bottom_node(item);
+
+                      var table_bottom = document.getElementById("table_item_" + bottom_node.id);
+
+                      for_each_sibling(item,
+                        function (i)
+                        {
+                          var table = document.getElementById("table_item_" + i.id);
+
+                          table.remove();
+
+                          table_bottom.parentNode.insertBefore(table, table_bottom);
+                        }
+                      );
+                    }
+                  );
+                }
+              ],
+              [
+                "log work",
+                function()
+                {
+                  var logwork_comment = "text";
+                  var logwork_min     = 60;
+
+                  post_request().set(
+                    [
+                      [ "action",    5                ],
+                      [ "kid",       "ai"             ],
+                      [ "ftask_id",  item.id          ],
+                      [ "fcomment",  logwork_comment  ],
+                      [ "fstart_d",  "now"            ],
+                      [ "fstart_t",  "now"            ],
+                      [ "fmin",      logwork_min      ],
+                      [ "select",    "id,start"       ],
+                    ],
+                    function (r)
+                    {
+                      var resp;
+
+                      eval("resp = " + r.responseText);
+
+                      if (!resp.result)
+                        return;
+
+                      task.appendChild(document.createElement("br"));
+
+                      var el = resp.result[0];
+
+                      task.appendChild(
+                        avgp_task_comment_log_work_view(el, item.id)
+                      );
+                    }
+                  );
+                }
+              ],
+              [
+                "close",
+                function()
+                {
+                  alert("close \"" + item.title + "\"!");
+                }
               ],
             ];
 
