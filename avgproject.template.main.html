@@ -440,10 +440,8 @@
             return tbl;
           }
 
-          task.appendChild((function(){
-            var tbl = document.createElement("table");
-
-            var arr = [
+          task.appendChild(avgproject.toolbar(
+            [
               [
                 "up",
                 function ()
@@ -529,39 +527,8 @@
                   alert("close \"" + item.title + "\"!");
                 }
               ],
-            ];
-
-            var tr = document.createElement("tr");
-
-            for (var i = 0; i < arr.length; ++i)
-            {
-              (function(){
-                var td = document.createElement("td");
-
-                var text = arr[i][0];
-
-                var btn = document.createElement("button");
-
-                btn.style.setProperty("background-color", "rgb(215, 240, 255)");
-                btn.style.setProperty("border", "0px none");
-                btn.style.setProperty("color", "rgb(0, 118, 189)");
-                btn.style.setProperty("cursor", "pointer");
-                btn.style.setProperty("padding", "4px 40px");
-
-                btn.addEventListener("click", arr[i][1]);
-
-                btn.appendChild(document.createTextNode(text));
-
-                td.appendChild(btn);
-
-                tr.appendChild(td);
-              })();
-            }
-
-            tbl.appendChild(tr);
-
-            return tbl;
-          })());
+            ]
+          ));
 
           task.appendChild(document.createElement("br"));
 
@@ -680,6 +647,39 @@
               }
             }
           );
+        },
+        toolbar: function (arr)
+        {
+          var tbl = document.createElement("table");
+
+          var tr = document.createElement("tr");
+
+          for (var i = 0; i < arr.length; ++i)
+          {
+            var td = document.createElement("td");
+
+            var text = arr[i][0];
+
+            var btn = document.createElement("button");
+
+            btn.style.setProperty("background-color", "rgb(215, 240, 255)");
+            btn.style.setProperty("border", "0px none");
+            btn.style.setProperty("color", "rgb(0, 118, 189)");
+            btn.style.setProperty("cursor", "pointer");
+            btn.style.setProperty("padding", "4px 40px");
+
+            btn.addEventListener("click", arr[i][1]);
+
+            btn.appendChild(document.createTextNode(text));
+
+            td.appendChild(btn);
+
+            tr.appendChild(td);
+          }
+
+          tbl.appendChild(tr);
+
+          return tbl;
         },
         tree_view_tasks: function(container, task_ws, offset_step, cmp)
         {
