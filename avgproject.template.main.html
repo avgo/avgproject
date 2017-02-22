@@ -284,7 +284,7 @@
 
           return table;
         },
-        task_ws: function(task, item)
+        task_ws: function(task, item, opts)
         {
           while (task.firstChild)
             task.removeChild(task.firstChild);
@@ -306,6 +306,8 @@
                 {
                   item.title = new_text;
                   lbl_title.update();
+                  if (opts.task_title_update)
+                    opts.task_title_update();
                 }
               );
             }
@@ -558,6 +560,8 @@
         },
         tree_view_tasks: function(container, task_ws, offset_step, cmp)
         {
+          var tasks;
+
           function append_nodes(tree_node)
           {
             for ( var i = tree_node.first; i; i = i.next)
@@ -567,7 +571,11 @@
               else
                 i.offset = tree_node.offset + offset_step;
 
-              container.appendChild(new_tv_node(i));
+              var html_element = new_tv_node(i);
+
+              i.html_element = html_element;
+
+              container.appendChild(html_element);
 
               if (i.first)
                 append_nodes(i);
@@ -579,10 +587,79 @@
             var s;
             var title;
 
+            var newtask_click =
+              function(e)
+              {
+                var new_node =
+                  {
+                    parent_id: tree_node.id
+                  }
+                ;
+
+                if (tree_node.id == 0)
+                {
+                  new_node.title        = "Проект";
+                  new_node.description  = "Описание проекта.";
+                  new_node.type         = node_type.project;
+                  new_node.offset       = 0;
+                }
+                else
+                {
+                  new_node.title        = "задача";
+                  new_node.description  = "Описание задачи.";
+                  new_node.type         = node_type.task;
+                  new_node.offset       = tree_node.offset + offset_step;
+                }
+
+                new_node.priority = "";
+
+                post_request().set(
+                  [
+                    [ "action",       "2"                  ],
+                    [ "parent_id",    new_node.parent_id   ],
+                    [ "title",        new_node.title       ],
+                    [ "description",  new_node.description ],
+                    [ "type",         new_node.type        ],
+                  ],
+                  function (r)
+                  {
+                    var resp;
+
+                    var cmd = "resp = " + r.responseText + ";";
+
+                    eval(cmd);
+
+                    if (!resp.id) // Произошла ошибка во время добавления на сервере
+                      return;
+
+                    new_node.id           = resp.id;
+                    new_node.dtm_created  = resp.dtm_created;
+
+                    tree_store_add(tasks, tree_node, new_node, cmp);
+
+                    var html_element = new_tv_node(new_node);
+
+                    new_node.html_element = html_element;
+
+                    var bn = tree_store_get_bottom_node(new_node);
+
+                    bn.html_element.parentNode.insertBefore(html_element, bn.html_element);
+                  }
+                );
+
+                e.preventDefault();
+              }
+            ;
+
+            var project_click;
+
+            var a_href_title;
+
             if (tree_node.id == 0)
             {
               s = "p";
               title = "+[ADD]";
+              project_click = newtask_click;
             }
             else
             {
@@ -599,6 +676,21 @@
                   break;
               }
               title = tree_node.title + " (" + tree_node.id + ", " + tree_node.parent_id + ")";
+              project_click = function(e)
+              {
+                avgproject.task_ws(task_ws, tree_node,
+                  {
+                    task_title_update: function()
+                    {
+                      while (a_href_title.firstChild)
+                        a_href_title.removeChild(a_href_title.firstChild);
+                      a_href_title.appendChild(document.createTextNode(tree_node.title));
+                    }
+                  }
+                );
+
+                e.preventDefault();
+              }
             }
 
             var task_style        = "task_" + s;
@@ -622,45 +714,33 @@
 
             td.setAttribute("class", "task " + task_style);
 
-            var a_href = document.createElement("a");
+            a_href_title = document.createElement("a");
 
-            a_href.addEventListener("click",
-              function(e)
-              {
-                avgproject.task_ws(task_ws, tree_node);
+            a_href_title.addEventListener("click", project_click);
 
-                e.preventDefault();
-              }
-            );
+            a_href_title.setAttribute("class", "task_btn " + task_btn_style);
 
-            a_href.setAttribute("class", "task_btn " + task_btn_style);
+            a_href_title.setAttribute("href", tree_node.id);
 
-            a_href.setAttribute("href", tree_node.id);
+            a_href_title.appendChild(document.createTextNode(title));
 
-            a_href.appendChild(document.createTextNode(title));
-
-            td.appendChild(a_href);
+            td.appendChild(a_href_title);
 
             if (tree_node.id > 0)
             {
               td.appendChild(document.createElement("br"));
 
-              a_href = document.createElement("a");
+              var a_href_subt = document.createElement("a");
 
-              a_href.addEventListener("click",
-                function(e)
-                {
-                  e.preventDefault();
-                }
-              );
+              a_href_subt.addEventListener("click", newtask_click);
 
-              a_href.setAttribute("href", tree_node.id);
+              a_href_subt.setAttribute("href", tree_node.id);
 
-              a_href.setAttribute("class", "task_btn task_btn_s");
+              a_href_subt.setAttribute("class", "task_btn task_btn_s");
 
-              a_href.appendChild(document.createTextNode("(new subtask)"));
+              a_href_subt.appendChild(document.createTextNode("(new subtask)"));
 
-              td.appendChild(a_href);
+              td.appendChild(a_href_subt);
             }
 
             tr.appendChild(td);
@@ -680,7 +760,7 @@
 
               eval("tasks_nodes = [\n" + r.responseText + "\n];");
 
-              var tasks = tree_store_build_tree(tasks_nodes, cmp);
+              tasks = tree_store_build_tree(tasks_nodes, cmp);
 
               /*
                 Вообще, функция "tree_store_build_tree"  всегда  завершается  успешно,  за
@@ -691,7 +771,11 @@
 
               append_nodes(tasks);
 
-              container.appendChild(new_tv_node(tasks));
+              var html_element = new_tv_node(tasks);
+
+              tasks.html_element = html_element;
+
+              container.appendChild(html_element);
             }
           );
         },
