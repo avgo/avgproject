@@ -55,5 +55,5 @@ else
 	sed s@%SITE_DOC_DIR%@d/@g avgproject.template.main.html > $(CGI_BIN)/avgproject.template.main.html
 endif
 	cp -vfu index.pl $(CGI_BIN)
-	cp -vfu toolkit.css toolkit.js tree_items.js $(DOC_DIR)
+	cp -vfu avgproject.css avgproject.js toolkit.css toolkit.js tree_items.js $(DOC_DIR)
 
