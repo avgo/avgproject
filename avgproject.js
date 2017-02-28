@@ -275,46 +275,6 @@ var avgproject =
     task.appendChild(avgproject.toolbar(
       [
         [
-          "up",
-          function ()
-          {
-            post_request().set(
-              [
-                [ "action",  4       ],
-                [ "id",      item.id ],
-              ],
-              function (r)
-              {
-                var par = item.parent;
-
-                var resp;
-
-                eval("resp = { " + r.responseText + " }");
-
-                item.priority = resp.priority;
-
-                tree_store_unlink(item, item);
-                tree_store_add(app.tasks, par, item, app.cmp);
-
-                var bottom_node = tree_store_get_bottom_node(item);
-
-                var table_bottom = document.getElementById("table_item_" + bottom_node.id);
-
-                for_each_sibling(item,
-                  function (i)
-                  {
-                    var table = document.getElementById("table_item_" + i.id);
-
-                    table.remove();
-
-                    table_bottom.parentNode.insertBefore(table, table_bottom);
-                  }
-                );
-              }
-            );
-          }
-        ],
-        [
           "log work",
           function()
           {
