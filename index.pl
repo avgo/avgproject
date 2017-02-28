@@ -27,6 +27,7 @@ use constant {
 
 
 sub action_comments_ins_upd;
+sub action_comments_insert;
 sub action_comments_select;
 sub action_default;
 sub action_get_task_list;
@@ -38,6 +39,10 @@ sub action_task_up;
 sub comments_get_rules;
 sub dbi_connect($);
 sub main;
+sub query_exec;
+sub query_exec_cgi_val_subst;
+sub query_last_insert_id;
+sub query_print_data_set;
 sub template_end;
 sub template_set;
 sub template_start;
@@ -93,6 +98,33 @@ sub action_comments_ins_upd {
 
 	action_ins_upd_cgi($hash, $param_h, $is_insert, $table,
 			$fields, $keys, comments_get_rules);
+}
+
+sub action_comments_insert {
+	( my $hash, my $action, my $param_h ) = @_ ;
+
+	query_exec_cgi_val_subst
+		$hash,
+		"INSERT INTO `comments` (\n" .
+		"  `modified`,\n" .
+		"  `type`,\n" .
+		"  `created`,\n" .
+		"  `min`,\n" .
+		"  `comment`,\n" .
+		"  `start_d`,\n" .
+		"  `start_t`,\n" .
+		"  `task_id`)\n" .
+		"VALUES (NOW(),?,NOW(),?,?,NOW(),NOW(),?);\n",
+		$param_h, "type", "min", "comment", "task_id"
+	;
+
+	my $sth = query_last_insert_id $hash->{dbh};
+
+	( my $liid ) = $sth->fetchrow_array;
+
+	$sth = query_exec $hash->{dbh}, "SELECT * FROM `comments` WHERE id = ?;", $liid;
+
+	query_print_data_set $sth, 1;
 }
 
 sub action_comments_select {
@@ -573,6 +605,114 @@ sub dbi_connect($) {
 			or die "connect(): $!\n";
 }
 
+sub error_response {
+	my $msg = shift;
+
+	print	"Content-type: text/html; charset=UTF-8\n\n" .
+		"{ err: 'app error!' }\n"
+	;
+
+	die $msg . "\n";
+}
+
+sub query_exec {
+	( my $dbh, my $query ) = splice @_, 0, 2 ;
+
+	my $sth = $dbh->prepare($query);
+
+	error_response $! if not $sth ;
+
+	my $rv = $sth->execute( @_ );
+
+	error_response $sth->errstr if not $rv ;
+
+	return $sth;
+}
+
+sub query_exec_cgi_val_subst {
+	( my $hash, my $query, my $param_h ) = splice @_, 0, 3 ;
+
+	my @parameters;
+
+	for my $i ( @_ )
+	{
+		my $cur_val = $param_h->{$i};
+
+		error_response "query_exec_cgi_val_subst() error: no value for '$i' parameter in HTTP request."
+			if not defined $cur_val;
+
+		push @parameters, $cur_val;
+	}
+
+	return query_exec $hash->{dbh}, $query, @parameters;
+}
+
+sub query_last_insert_id {
+	( my $dbh ) = @_ ;
+
+	return query_exec $dbh, "SELECT LAST_INSERT_ID();";
+}
+
+sub query_print_data_set {
+	( my $sth, my $body_hashes ) = @_ ;
+
+	print	"Content-type: text/html; charset=UTF-8\n\n",
+		"{ data_set: { header: ["
+	;
+
+	my $fields = $sth->{NAME};
+
+	my $comma;
+
+	for my $fn ( @{$fields} )
+	{
+		print $comma, " \"", string_to_js($fn), "\""; $comma = ",";
+	}
+
+	print	" ], fields: {"; $comma = ""; my $f_count = scalar @{$fields};
+
+	for ( my $f_idx = 0; $f_idx < $f_count; ++$f_idx )
+	{
+		print	$comma,
+			" ", string_to_js($fields->[$f_idx]),
+			": ", $f_idx;
+		$comma = ",";
+	}
+
+	print	" }, body: ["; $comma = "";
+
+	if ( $body_hashes )
+	{
+		while ( my @row = $sth->fetchrow_array )
+		{
+			print $comma, " {"; $comma = "";
+			for ( my $c_idx = 0; $c_idx < $f_count; ++$c_idx)
+			{
+				my $fn = $fields->[$c_idx];
+				my $cell = $row[$c_idx];
+				print $comma, " ", $fn, ": \"", string_to_js($cell), "\"";
+				$comma = ",";
+			}
+			print " }";
+		}
+	}
+	else
+	{
+		while ( my @row = $sth->fetchrow_array )
+		{
+			print $comma, " ["; $comma = "";
+			for my $r ( @row )
+			{
+				print $comma, " \"", string_to_js($r), "\"";
+				$comma = ",";
+			}
+			print " ]";
+		}
+	}
+
+	print " ] } }";
+}
+
 sub comments_get_rules {
 	return {
 		"comment"  => {
@@ -661,12 +801,7 @@ sub main {
 		2          => \&action_task_add,
 		3          => \&action_task_edit,
 		4          => \&action_task_up,
-		5          => [
-				\&action_comments_ins_upd,
-				INS_UPD_INSERT,
-				"comments",
-				INS_UPD_LOG_WORK
-		],
+		5          => \&action_comments_insert,
 		6          => [
 				\&action_comments_select,
 				"comments"

@@ -70,7 +70,7 @@ function post_request(url, arr1)
 
 var avgproject =
 {
-  comment: function (comment, task_id)
+  comment: function (comment)
   {
     var updater = post_request(
       "",
@@ -278,19 +278,18 @@ var avgproject =
           "log work",
           function()
           {
-            var logwork_comment = "text";
-            var logwork_min     = 60;
+            var comment = {
+              comment: "text",
+              min:     60,
+            };
 
             post_request().set(
               [
-                [ "action",    5                ],
-                [ "kid",       "ai"             ],
-                [ "ftask_id",  item.id          ],
-                [ "fcomment",  logwork_comment  ],
-                [ "fstart_d",  "now"            ],
-                [ "fstart_t",  "now"            ],
-                [ "fmin",      logwork_min      ],
-                [ "select",    "id,start"       ],
+                [ "action",   5                ],
+                [ "task_id",  item.id          ],
+                [ "comment",  comment.comment  ],
+                [ "min",      comment.min      ],
+                [ "type",     1                ],
               ],
               function (r)
               {
@@ -298,16 +297,20 @@ var avgproject =
 
                 eval("resp = " + r.responseText);
 
-                if (!resp.result)
+                if (!resp.data_set)
+                {
+                  alert(
+                    "no data_set!\n" +
+                    r.responseText
+                  );
                   return;
+                }
 
                 task.appendChild(document.createElement("br"));
 
-                var el = resp.result[0];
+                var el = resp.data_set.body[0];
 
-                task.appendChild(
-                  avgproject.comment(el, item.id)
-                );
+                task.appendChild(avgproject.comment(el));
               }
             );
           }
@@ -434,7 +437,7 @@ var avgproject =
           task.appendChild(document.createElement("br"));
 
           task.appendChild(
-            avgproject.comment(el, item.id)
+            avgproject.comment(el)
           );
         }
       }
