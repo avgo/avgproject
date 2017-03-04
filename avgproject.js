@@ -412,23 +412,22 @@ var avgproject =
 
     post_request().set(
       [
-        [ "action",    6        ],
-        [ "fields",    "id,type,comment,start_d,start_t,min,created,modified" ],
-        [ "qtask_id",  item.id  ],
+        [ "action",   6        ],
+        [ "task_id",  item.id  ],
       ],
       function (r)
       {
         var resp;
 
-        eval("resp = " + r.responseText);
+        eval("resp = " + r.responseText + ";");
+
+        var arr = resp.data_set.body;
 
         task.appendChild(document.createElement("br"));
 
-        task.appendChild(document.createTextNode("Коментарии " + resp.result.length + " штук."));
+        task.appendChild(document.createTextNode("Коментарии " + arr.length + " штук."));
 
         task.appendChild(document.createElement("br"));
-
-        var arr = resp.result;
 
         for (var i = 0; i < arr.length; ++i)
         {
@@ -436,9 +435,7 @@ var avgproject =
 
           task.appendChild(document.createElement("br"));
 
-          task.appendChild(
-            avgproject.comment(el)
-          );
+          task.appendChild(avgproject.comment(el));
         }
       }
     );

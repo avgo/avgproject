@@ -128,101 +128,15 @@ sub action_comments_insert {
 }
 
 sub action_comments_select {
-	( my $hash, my $action, my $param_h, my $table, my $comment_type ) = @_ ;
+	( my $hash, my $action, my $param_h ) = @_ ;
 
-	my $rules = comments_get_rules;
+	my $sth = query_exec_cgi_val_subst
+		$hash,
+		"SELECT * FROM `comments` WHERE `task_id` = ?;\n",
+		$param_h, "task_id"
+	;
 
-	my $fields = delete $param_h->{fields};
-
-	my $query = "SELECT ";
-
-	my @fields_names = split /,/, $fields;
-
-	my $comma = "";
-
-	for my $f( @fields_names )
-	{
-		$query .= sprintf "%s\n  `%s`", $comma, $f;
-		$comma = ",";
-	}
-
-	$query .= "\nFROM `" . $table . "`\nWHERE";
-
-	my @keys;
-
-	$comma = "";
-
-	for my $key ( keys %{$param_h} )
-	{
-		my $key_n = $key;
-
-		if ( $key =~ /^q/ )
-		{
-			$key_n =~ s/^q//;
-			push @keys, $param_h->{$key};
-
-			$query .= sprintf "%s\n  `%s` = ?", $comma, $key_n ;
-			$comma = " AND";
-		}
-	}
-
-	$query .= "\n;";
-
-	my $sth; my $rv;
-
-	$sth = $hash->{dbh}->prepare($query);
-
-	if ( not $sth )
-	{
-		print	"Content-type: text/html; charset=UTF-8\n\n" .
-			"{ err: 'app error!' }\n"
-		;
-
-		die "$!\n";
-	}
-
-	$rv = $sth->execute( @keys );
-
-	if ( not $rv )
-	{
-		print	"Content-type: text/html; charset=UTF-8\n\n" .
-			"{ err: 'database error!' }\n"
-		;
-
-		die $sth->errstr . "\n";
-	}
-
-	print "Content-type: text/html; charset=UTF-8\n\n";
-
-	my $fields_arr = $sth->{NAME};
-
-	my $fields_arr_count = scalar @{$fields_arr};
-
-	print "{ info: { }, result: [\n";
-
-	while ( my @row = $sth->fetchrow_array )
-	{
-		my $str = "{\n";
-
-		for ( my $i = 0; $i < $fields_arr_count; ++$i )
-		{
-			my $field_name = $fields_arr->[$i];
-
-			my $val = $row[$i];
-
-			$val = "\"" . string_to_js($val) . "\""
-				if $rules->{$field_name}->{quot};
-
-			$str .= sprintf "  %s: %s,\n",
-				$field_name,
-				$val
-			;
-		}
-
-		print $str, "},\n";
-	}
-
-	print "] }\n";
+	query_print_data_set $sth, 1;
 }
 
 sub action_default {
@@ -802,10 +716,7 @@ sub main {
 		3          => \&action_task_edit,
 		4          => \&action_task_up,
 		5          => \&action_comments_insert,
-		6          => [
-				\&action_comments_select,
-				"comments"
-		],
+		6          => \&action_comments_select,
 		7          => [
 				\&action_comments_ins_upd,
 				INS_UPD_UPDATE,
