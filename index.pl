@@ -35,7 +35,6 @@ sub action_ins_upd;
 sub action_ins_upd_cgi;
 sub action_task_add;
 sub action_task_edit;
-sub action_task_up;
 sub comments_get_rules;
 sub dbi_connect($);
 sub main;
@@ -481,33 +480,6 @@ sub action_task_edit {
 	my $rv = $sth->execute(@query_arr, $id) or die $sth->errstr;
 }
 
-sub action_task_up {
-	my $object = shift;
-
-	print "Content-type: text/html; charset=UTF-8\n\n";
-
-	my $id = $cgi->param("id");
-
-	if (not defined $id)
-	{
-		print "error!\n";
-		return;
-	}
-
-	my $sth = $object->{dbh}->prepare(
-			"UPDATE `tasks` SET priority = NOW() WHERE id = ?;")
-			or die "prepare(): $!\n";
-	my $rv = $sth->execute($id) or die $sth->errstr;
-
-	$sth = $object->{dbh}->prepare("SELECT priority FROM tasks WHERE id = ?;")
-			or die "prepare(): $!\n";
-	$rv = $sth->execute($id) or die $sth->errstr;
-
-	(my $priority) = $sth->fetchrow_array;
-
-	print "priority: '$priority'\n";
-}
-
 sub dbi_connect($) {
 	my $par = shift;
 
@@ -714,7 +686,6 @@ sub main {
 		1          => \&action_get_task_list,
 		2          => \&action_task_add,
 		3          => \&action_task_edit,
-		4          => \&action_task_up,
 		5          => \&action_comments_insert,
 		6          => \&action_comments_select,
 		7          => [
