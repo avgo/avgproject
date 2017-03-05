@@ -66,8 +66,7 @@ my $result_html;
 
 
 sub action_comments_ins_upd {
-	( my $hash, my $action, my $param_h, my $is_insert,
-			my $table, my $comment_type ) = @_ ;
+	( my $hash, my $is_insert, my $table, my $comment_type ) = @_ ;
 
 	# Нужно проверять, определены ли уже эти поля!
 
@@ -95,12 +94,12 @@ sub action_comments_ins_upd {
 
 	my $keys = [ ];
 
-	action_ins_upd_cgi($hash, $param_h, $is_insert, $table,
+	action_ins_upd_cgi($hash, $is_insert, $table,
 			$fields, $keys, comments_get_rules);
 }
 
 sub action_comments_insert {
-	( my $hash, my $action, my $param_h ) = @_ ;
+	( my $hash ) = @_ ;
 
 	query_exec_cgi_val_subst
 		$hash,
@@ -114,7 +113,7 @@ sub action_comments_insert {
 		"  `start_t`,\n" .
 		"  `task_id`)\n" .
 		"VALUES (NOW(),?,NOW(),?,?,NOW(),NOW(),?);\n",
-		$param_h, "type", "min", "comment", "task_id"
+		"type", "min", "comment", "task_id"
 	;
 
 	my $sth = query_last_insert_id $hash->{dbh};
@@ -127,12 +126,12 @@ sub action_comments_insert {
 }
 
 sub action_comments_select {
-	( my $hash, my $action, my $param_h ) = @_ ;
+	( my $hash ) = @_ ;
 
 	my $sth = query_exec_cgi_val_subst
 		$hash,
 		"SELECT * FROM `comments` WHERE `task_id` = ?;\n",
-		$param_h, "task_id"
+		"task_id"
 	;
 
 	query_print_data_set $sth, 1;
@@ -198,8 +197,7 @@ sub action_get_task_list {
 
 sub action_ins_upd {
 	( my $hash, my $is_insert, my $table, my $fields,
-			my $keys, my $fields_rules,
-			my $select_after ) = @_ ;
+			my $keys, my $fields_rules ) = @_ ;
 
 	my $query;
 
@@ -382,12 +380,12 @@ sub action_ins_upd {
 }
 
 sub action_ins_upd_cgi {
-	(my $hash, my $param_h, my $is_insert, my $table,
+	(my $hash, my $is_insert, my $table,
 			my $fields, my $keys, my $fields_rules) = @_ ;
 
-	my $select_after;
+	my $param_h = $hash->{parameters_h};
 
-	for my $key ( keys %{$param_h} )
+	for my $key ( $hash->{parameters} )
 	{
 		my $key_n = $key;
 
@@ -401,14 +399,10 @@ sub action_ins_upd_cgi {
 			$key_n =~ s/^k//;
 			push @{$keys}, [ $key_n, $param_h->{$key} ] ;
 		}
-		elsif ( $key eq "select" )
-		{
-			$select_after = delete $param_h->{select};
-		}
 	}
 
-	action_ins_upd($hash, $is_insert, $table, $fields, $keys,
-			$fields_rules, $select_after);
+	action_ins_upd($hash, $is_insert, $table, $fields,
+			$keys, $fields_rules);
 }
 
 sub action_task_add {
@@ -516,9 +510,11 @@ sub query_exec {
 }
 
 sub query_exec_cgi_val_subst {
-	( my $hash, my $query, my $param_h ) = splice @_, 0, 3 ;
+	( my $hash, my $query ) = splice @_, 0, 2 ;
 
 	my @parameters;
+
+	my $param_h = $hash->{parameters_h};
 
 	for my $i ( @_ )
 	{
@@ -707,8 +703,6 @@ sub main {
 
 	}
 
-	dbi_connect \%hash;
-
 	my $args;
 
 	if ( ref($handler) eq "ARRAY" )
@@ -722,7 +716,15 @@ sub main {
 		$args = [ ];
 	}
 
-	&{$handler} ( \%hash, $action, \%parameters_h, @{$args} );
+	dbi_connect \%hash;
+
+	$hash{action} = $action;
+
+	$hash{parameters} = \@parameters;
+
+	$hash{parameters_h} = \%parameters_h;
+
+	&{$handler} ( \%hash, @{$args} );
 }
 
 sub string_to_js {
