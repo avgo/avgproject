@@ -29,6 +29,7 @@ use constant {
 sub action_comments_ins_upd;
 sub action_comments_insert;
 sub action_comments_select;
+sub action_comments_update;
 sub action_default;
 sub action_get_task_list;
 sub action_ins_upd;
@@ -37,11 +38,14 @@ sub action_task_add;
 sub action_task_edit;
 sub comments_get_rules;
 sub dbi_connect($);
+sub error_response;
+sub log_message;
 sub main;
 sub query_exec;
 sub query_exec_cgi_val_subst;
 sub query_last_insert_id;
 sub query_print_data_set;
+sub query_update;
 sub template_end;
 sub template_set;
 sub template_start;
@@ -84,8 +88,9 @@ sub action_comments_ins_upd {
   `id`        int(10) unsigned   [ ]
   `task_id`   int(10) unsigned   [ ]
   `type`      int(10) unsigned   [ ]
-  `comment`   varchar(200)       [X]
-  `start`     datetime           [X]
+  `comment`   text               [X]
+  `start_d`   date               [X]
+  `start_t`   time               [X]
   `min`       int(10) unsigned   [ ]
   `created`   datetime           [X]
   `modified`  datetime           [X]
@@ -135,6 +140,69 @@ sub action_comments_select {
 	;
 
 	query_print_data_set $sth, 1;
+}
+
+sub action_comments_update {
+	my $hash = shift;
+
+=pod
+  `id`        int(10) unsigned   [ ]
+  `task_id`   int(10) unsigned   [ ]
+  `type`      int(10) unsigned   [ ]
+  `comment`   text               [X]
+  `start_d`   date               [X]
+  `start_t`   time               [X]
+  `min`       int(10) unsigned   [ ]
+  `created`   datetime           [X]
+  `modified`  datetime           [X]
+=cut
+
+	my $id = $hash->{parameters_h}->{id};
+
+	error_response "error: \"id\" parameter required.\n"
+		if not defined $id ;
+
+	my $proc_mbnd = sub {
+		( my $hash, my $field ) = @_ ;
+
+		my $field_val = $hash->{$field};
+
+		return if not defined $field_val ;
+
+		return [ "?", $field_val ];
+	};
+
+	my $proc_required = sub {
+		( my $hash, my $field ) = @_ ;
+
+		my $field_val = $hash->{$field};
+
+		error_response "error: \"$field\" parameter required.\n"
+			if not defined $field_val ;
+
+		return [ "?", $field_val ];
+	};
+
+	query_update $hash->{dbh}, $hash->{parameters_h},
+		"UPDATE `comments` SET", [
+		[ "\n  `task_id` = %s",   "task_id",  $proc_mbnd ],
+	#	[ "\n  `type` = %s",      "type",     $proc_mbnd ],
+		[ "\n  `comment` = %s",   "comment",  $proc_mbnd ],
+		[ "\n  `start_d` = %s",   "start_d",  $proc_mbnd ],
+		[ "\n  `start_t` = %s",   "start_t",  $proc_mbnd ],
+		[ "\n  `min` = %s",       "min",      $proc_mbnd ],
+	#	[ "\n  `created` = %s",   "created",  $proc_mbnd ],
+		[ "\n  `modified` = %s",  "modified",
+			sub {
+				return [ "NOW()", undef ];
+			}
+		] ],
+		"\nWHERE\n  `id` = ?\n;", $id
+	;
+
+	print	"Content-type: text/html; charset=UTF-8\n\n",
+		"{ }"
+	;
 }
 
 sub action_default {
@@ -495,6 +563,13 @@ sub error_response {
 	die $msg . "\n";
 }
 
+sub log_message
+{
+	my $object = shift;
+
+	print { $object->{log_fd} } @_ ;
+}
+
 sub query_exec {
 	( my $dbh, my $query ) = splice @_, 0, 2 ;
 
@@ -595,6 +670,46 @@ sub query_print_data_set {
 	print " ] } }";
 }
 
+sub query_update {
+	( my $dbh, my $arg, my $query, my $fields_to_upd, my $where_section ) = splice @_, 0, 5 ;
+
+	my $comma;
+
+	my @query_parameters;
+
+	for my $field_to_upd ( @{$fields_to_upd} )
+	{
+		my $arr = $field_to_upd->[2]->($arg, $field_to_upd->[1]);
+
+		if ( defined $arr )
+		{
+			$query .= $comma . sprintf ($field_to_upd->[0], $arr->[0]);
+
+			my $val = $arr->[1] ;
+
+			push @query_parameters, $val if defined $val;
+
+			$comma = "," if not defined $comma ;
+		}
+	}
+
+	error_response "query_update(): no fields selected.\n"
+		if not defined $comma ;
+
+	$query .= $where_section;
+
+=pod
+	log_message
+		$global,
+		"query: ", $query, "\n",
+		Dumper([ @query_parameters, @_ ]), "\n",
+		"\n"
+	;
+=cut
+
+	query_exec $dbh, $query, @query_parameters, @_ ;
+}
+
 sub comments_get_rules {
 	return {
 		"comment"  => {
@@ -656,7 +771,7 @@ sub load_config {
 
         my $cfg = new Config::Simple("avgproject.conf");
 
-        my @vars_to_load = qw(mysql_db_name mysql_user mysql_password);
+        my @vars_to_load = qw(log_filename mysql_db_name mysql_user mysql_password);
 
         for my $var_name ( @vars_to_load )
         {
@@ -668,6 +783,12 @@ sub main {
 	my %hash = ();
 
 	load_config (\%hash);
+
+	if ( $hash{log_filename} )
+	{
+		open $hash{log_fd}, ">>", $hash{log_filename} or die "can't open log ";
+		print STDERR "log_filename: '", $hash{log_filename}, "'.\n" ;
+	}
 
 	my @parameters = $cgi->param;
 
@@ -684,12 +805,7 @@ sub main {
 		3          => \&action_task_edit,
 		5          => \&action_comments_insert,
 		6          => \&action_comments_select,
-		7          => [
-				\&action_comments_ins_upd,
-				INS_UPD_UPDATE,
-				"comments",
-				INS_UPD_LOG_WORK
-		],
+		7          => \&action_comments_update,
 	);
 
 	my $handler = $parameters{$action};

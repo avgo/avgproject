@@ -76,7 +76,7 @@ var avgproject =
       "",
       [
         [ "action",  7           ],
-        [ "kid",     comment.id  ],
+        [ "id",      comment.id  ],
       ]
     );
 
@@ -105,7 +105,7 @@ var avgproject =
         new_text = new_text.replace(/T.*/, '');
         updater.set(
           [
-            [ "fstart_d", new_text ],
+            [ "start_d", new_text ],
           ],
           function()
           {
@@ -133,7 +133,7 @@ var avgproject =
       {
         updater.set(
           [
-            [ "fstart_t", text ],
+            [ "start_t", text ],
           ],
           function()
           {
@@ -160,7 +160,7 @@ var avgproject =
       {
         updater.set(
           [
-            [ "fmin", text ],
+            [ "min", text ],
           ],
           function()
           {
@@ -193,7 +193,7 @@ var avgproject =
       {
         updater.set(
           [
-            [ "fcomment", t ],
+            [ "comment", t ],
           ],
           function()
           {
