@@ -20,7 +20,8 @@ function post_request(url, arr1)
 
   function append(arr)
   {
-    return arr[0] + "=" + encodeURIComponent(arr[1]);
+    var comp = arr[1];
+    return arr[0] + "=" + ( comp == null ? "" : encodeURIComponent(comp) );
   }
 
   if (arr1)

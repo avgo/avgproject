@@ -40,6 +40,7 @@ sub log_message;
 sub main;
 sub query_exec;
 sub query_exec_cgi_val_subst;
+sub query_insert;
 sub query_last_insert_id;
 sub query_print_data_set;
 sub query_update;
@@ -61,6 +62,7 @@ my %esc = (
 	"\\" => '\\\\',
 	"\'" => '\\\'',
 );
+my $global;
 my $result_html;
 
 
@@ -69,19 +71,53 @@ my $result_html;
 sub action_comments_insert {
 	( my $hash ) = @_ ;
 
-	query_exec_cgi_val_subst
-		$hash,
-		"INSERT INTO `comments` (\n" .
-		"  `modified`,\n" .
-		"  `type`,\n" .
-		"  `created`,\n" .
-		"  `min`,\n" .
-		"  `comment`,\n" .
-		"  `start_d`,\n" .
-		"  `start_t`,\n" .
-		"  `task_id`)\n" .
-		"VALUES (NOW(),?,NOW(),?,?,NOW(),NOW(),?);\n",
-		"type", "min", "comment", "task_id"
+	my $proc_mbnd = sub {
+		( my $hash, my $field ) = @_ ;
+
+		my $field_val = $hash->{$field};
+
+		return if not defined $field_val ;
+
+		return [ "?", $field_val ];
+	};
+
+	my $proc_required = sub {
+		( my $hash, my $field ) = @_ ;
+
+		my $field_val = $hash->{$field};
+
+		error_response "error: \"$field\" parameter required.\n"
+			if not defined $field_val ;
+
+		return [ "?", $field_val ];
+	};
+
+	query_insert $hash->{dbh}, $hash->{parameters_h},
+		"INSERT INTO `comments` (",
+		[ "\n  `modified`", undef,
+			sub {
+				return [ "NOW()", undef ];
+			},
+		],
+		[ "\n  `type`",     "type",     $proc_required ],
+		[ "\n  `created`",  undef,
+			sub {
+				return [ "NOW()", undef ];
+			},
+		],
+		[ "\n  `min`",      "min",      $proc_mbnd     ],
+		[ "\n  `comment`",  "comment",  $proc_required ],
+		[ "\n  `start_d`",  "start_d",
+			sub {
+				return [ "NOW()", undef ];
+			}
+		],
+		[ "\n  `start_t`",  "start_t",
+			sub {
+				return [ "NOW()", undef ];
+			}
+		],
+		[ "\n  `task_id`",  "task_id",  $proc_mbnd     ]
 	;
 
 	my $sth = query_last_insert_id $hash->{dbh};
@@ -132,6 +168,20 @@ sub action_comments_update {
 
 		return if not defined $field_val ;
 
+		return [ "NULL", undef ] if $field_val eq "" ;
+
+		return [ "?", $field_val ];
+	};
+
+	my $proc_mbnd_null = sub {
+		( my $hash, my $field ) = @_ ;
+
+		my $field_val = $hash->{$field};
+
+		return if not defined $field_val ;
+
+		return [ "NULL", undef ] if $field_val eq "" ;
+
 		return [ "?", $field_val ];
 	};
 
@@ -148,13 +198,13 @@ sub action_comments_update {
 
 	query_update $hash->{dbh}, $hash->{parameters_h},
 		"UPDATE `comments` SET", [
-		[ "\n  `task_id` = %s",   "task_id",  $proc_mbnd ],
-	#	[ "\n  `type` = %s",      "type",     $proc_mbnd ],
-		[ "\n  `comment` = %s",   "comment",  $proc_mbnd ],
-		[ "\n  `start_d` = %s",   "start_d",  $proc_mbnd ],
-		[ "\n  `start_t` = %s",   "start_t",  $proc_mbnd ],
-		[ "\n  `min` = %s",       "min",      $proc_mbnd ],
-	#	[ "\n  `created` = %s",   "created",  $proc_mbnd ],
+		[ "\n  `task_id` = %s",   "task_id",  $proc_mbnd      ],
+	#	[ "\n  `type` = %s",      "type",     $proc_mbnd      ],
+		[ "\n  `comment` = %s",   "comment",  $proc_mbnd      ],
+		[ "\n  `start_d` = %s",   "start_d",  $proc_mbnd      ],
+		[ "\n  `start_t` = %s",   "start_t",  $proc_mbnd_null ],
+		[ "\n  `min` = %s",       "min",      $proc_mbnd      ],
+	#	[ "\n  `created` = %s",   "created",  $proc_mbnd      ],
 		[ "\n  `modified` = %s",  "modified",
 			sub {
 				return [ "NOW()", undef ];
@@ -357,6 +407,50 @@ sub query_exec_cgi_val_subst {
 	return query_exec $hash->{dbh}, $query, @parameters;
 }
 
+sub query_insert {
+	( my $dbh, my $arg, my $query ) = splice @_, 0, 3 ;
+
+	my $comma;
+
+	my $values = "\n)\nVALUES (" ;
+
+	my @query_parameters;
+
+	for my $field_rule ( @_ )
+	{
+		my $arr = $field_rule->[2]->( $arg, $field_rule->[1] );
+
+		if ( defined $arr )
+		{
+			$query .= $comma . $field_rule->[0] ;
+
+			$values .= $comma . $arr->[0] ;
+
+			my $val2 = $arr->[1] ;
+
+			push @query_parameters, $val2 if defined $val2 ;
+
+			$comma = "," if not defined $comma ;
+		}
+	}
+
+	error_response "query_insert(): no rules selected.\n"
+		if not defined $comma ;
+
+	$query .= $values . ");" ;
+
+=pod
+	log_message
+		$global,
+		"query: ", $query, "\n",
+		Dumper([ @query_parameters ]), "\n",
+		"\n"
+	;
+=cut
+
+	query_exec $dbh, $query, @query_parameters ;
+}
+
 sub query_last_insert_id {
 	( my $dbh ) = @_ ;
 
@@ -539,6 +633,7 @@ sub main {
 
 	if ( $hash{log_filename} )
 	{
+		$global = \%hash;
 		open $hash{log_fd}, ">>", $hash{log_filename} or die "can't open log ";
 		print STDERR "log_filename: '", $hash{log_filename}, "'.\n" ;
 	}
