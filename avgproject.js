@@ -82,104 +82,110 @@ var avgproject =
 
     var tbl = document.createElement("table");
 
-    tbl.style.setProperty("background-color", "#FFA1A1");
-    tbl.style.setProperty("border-radius", "8px");
-    tbl.style.setProperty("color", "#630000");
-    tbl.style.setProperty("width", "500px");
+    if (comment.type == 1)
+      tbl.className = "comment comment-logwork";
+    else
+      tbl.className = "comment comment-comment";
 
     var tr, td;
 
+    if (comment.type == 1)
+    {
+      tr = document.createElement("tr");
+
+      td = document.createElement("td");
+      td.style.setProperty("padding", "3px 3px 3px 10px");
+      td.style.setProperty("text-align", "center");
+      td.style.setProperty("width", "150px");
+      var dtmp_start_d = toolkit_datetime_picker(
+        function()
+        {
+          return comment.start_d;
+        },
+        function(new_text)
+        {
+          new_text = new_text.replace(/T.*/, '');
+          updater.set(
+            [
+              [ "start_d", new_text ],
+            ],
+            function()
+            {
+              comment.start_d = new_text;
+              dtmp_start_d.update();
+            }
+          );
+        }
+      );
+      td.appendChild(dtmp_start_d.element());
+      tr.appendChild(td);
+
+      td = document.createElement("td");
+      td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+      td.style.setProperty("font-size", "9pt");
+      td.style.setProperty("padding", "3px 3px 3px 10px");
+      td.style.setProperty("text-align", "center");
+      td.style.setProperty("width", "100px");
+      var label_hms_start_t = toolkit_label_hms(
+        function ()
+        {
+          return comment.start_t;
+        },
+        function (text)
+        {
+          updater.set(
+            [
+              [ "start_t", text ],
+            ],
+            function()
+            {
+              comment.start_t = text;
+              label_hms_start_t.update();
+            }
+          );
+        }
+      );
+      td.appendChild(label_hms_start_t.element());
+      tr.appendChild(td);
+
+      td = document.createElement("td");
+      td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
+      td.style.setProperty("font-size", "9pt");
+      td.style.setProperty("padding", "0px 15px");
+
+      var lbl_hm_min = toolkit_label_hm(
+        function ()
+        {
+          return comment.min;
+        },
+        function (text)
+        {
+          updater.set(
+            [
+              [ "min", text ],
+            ],
+            function()
+            {
+              comment.min = text;
+              lbl_hm_min.update();
+            }
+          );
+        }
+      );
+
+      td.appendChild(lbl_hm_min.element());
+      tr.appendChild(td);
+
+      tbl.appendChild(tr);
+    }
+
     tr = document.createElement("tr");
 
     td = document.createElement("td");
-    td.style.setProperty("padding", "3px 3px 3px 10px");
-    td.style.setProperty("text-align", "center");
-    td.style.setProperty("width", "150px");
-    var dtmp_start_d = toolkit_datetime_picker(
-      function()
-      {
-        return comment.start_d;
-      },
-      function(new_text)
-      {
-        new_text = new_text.replace(/T.*/, '');
-        updater.set(
-          [
-            [ "start_d", new_text ],
-          ],
-          function()
-          {
-            comment.start_d = new_text;
-            dtmp_start_d.update();
-          }
-        );
-      }
-    );
-    td.appendChild(dtmp_start_d.element());
-    tr.appendChild(td);
 
-    td = document.createElement("td");
-    td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
-    td.style.setProperty("font-size", "9pt");
-    td.style.setProperty("padding", "3px 3px 3px 10px");
-    td.style.setProperty("text-align", "center");
-    td.style.setProperty("width", "100px");
-    var label_hms_start_t = toolkit_label_hms(
-      function ()
-      {
-        return comment.start_t;
-      },
-      function (text)
-      {
-        updater.set(
-          [
-            [ "start_t", text ],
-          ],
-          function()
-          {
-            comment.start_t = text;
-            label_hms_start_t.update();
-          }
-        );
-      }
-    );
-    td.appendChild(label_hms_start_t.element());
-    tr.appendChild(td);
+    if (comment.type == 1)
+      td.setAttribute("colspan", "3");
 
-    td = document.createElement("td");
-    td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
-    td.style.setProperty("font-size", "9pt");
-    td.style.setProperty("padding", "0px 15px");
-
-    var lbl_hm_min = toolkit_label_hm(
-      function ()
-      {
-        return comment.min;
-      },
-      function (text)
-      {
-        updater.set(
-          [
-            [ "min", text ],
-          ],
-          function()
-          {
-            comment.min = text;
-            lbl_hm_min.update();
-          }
-        );
-      }
-    );
-
-    td.appendChild(lbl_hm_min.element());
-    tr.appendChild(td);
-
-    tbl.appendChild(tr);
-
-    tr = document.createElement("tr");
-
-    td = document.createElement("td");
-    td.setAttribute("colspan", "3");
     td.style.setProperty("border-style", "solid");
     td.style.setProperty("border-width", "1px 0px 0px");
     td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
@@ -274,6 +280,45 @@ var avgproject =
 
     task.appendChild(avgproject.toolbar(
       [
+        [
+          "comment",
+          function()
+          {
+            var comment = {
+              comment: "comment text"
+            };
+
+            post_request().set(
+              [
+                [ "action",   5                ],
+                [ "task_id",  item.id          ],
+                [ "comment",  comment.comment  ],
+                [ "type",     2                ],
+              ],
+              function (r)
+              {
+                var resp;
+
+                eval("resp = " + r.responseText);
+
+                if (!resp.data_set)
+                {
+                  alert(
+                    "no data_set!\n" +
+                    r.responseText
+                  );
+                  return;
+                }
+
+                task.appendChild(document.createElement("br"));
+
+                var el = resp.data_set.body[0];
+
+                task.appendChild(avgproject.comment(el));
+              }
+            );
+          }
+        ],
         [
           "log work",
           function()

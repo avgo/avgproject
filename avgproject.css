@@ -1,3 +1,17 @@
+.comment {
+  border-radius: 8px;
+  color: #630000;
+  width: 500px;
+}
+.comment-comment {
+  background-color: #FFFED6;
+  border-color: #9AA9FC;
+  border-width: 1px;
+  border-style: solid;
+}
+.comment-logwork {
+  background-color: #FFA1A1;
+}
 .task {
   border: 1px solid;
   padding: 10px 10px 10px 30px;
