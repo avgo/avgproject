@@ -914,6 +914,11 @@ function toolkit_memo_create(text_get, text_set)
         textarea.value = text_get();
 
         div_ta.appendChild(textarea);
+
+        textarea.focus();
+
+        textarea.selectionStart  = 0;
+        textarea.selectionEnd    = textarea.value.length;
       }
     );
 
