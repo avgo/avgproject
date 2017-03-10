@@ -81,6 +81,10 @@ sub action_comments_insert {
 		return [ "?", $field_val ];
 	};
 
+	my $proc_dtm_now = sub {
+		return [ "NOW()", undef ];
+	};
+
 	my $proc_required = sub {
 		( my $hash, my $field ) = @_ ;
 
@@ -94,29 +98,13 @@ sub action_comments_insert {
 
 	query_insert $hash->{dbh}, $hash->{parameters_h},
 		"INSERT INTO `comments` (",
-		[ "\n  `modified`", undef,
-			sub {
-				return [ "NOW()", undef ];
-			},
-		],
+		[ "\n  `modified`", undef,      $proc_dtm_now  ],
 		[ "\n  `type`",     "type",     $proc_required ],
-		[ "\n  `created`",  undef,
-			sub {
-				return [ "NOW()", undef ];
-			},
-		],
+		[ "\n  `created`",  undef,      $proc_dtm_now  ],
 		[ "\n  `min`",      "min",      $proc_mbnd     ],
 		[ "\n  `comment`",  "comment",  $proc_required ],
-		[ "\n  `start_d`",  "start_d",
-			sub {
-				return [ "NOW()", undef ];
-			}
-		],
-		[ "\n  `start_t`",  "start_t",
-			sub {
-				return [ "NOW()", undef ];
-			}
-		],
+		[ "\n  `start_d`",  "start_d",  $proc_dtm_now  ],
+		[ "\n  `start_t`",  "start_t",  $proc_dtm_now  ],
 		[ "\n  `task_id`",  "task_id",  $proc_mbnd     ]
 	;
 
