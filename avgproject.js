@@ -215,6 +215,29 @@ var avgproject =
 
     tbl.appendChild(tr);
 
+    tr = document.createElement("tr");
+
+    td = document.createElement("td");
+
+    if (comment.type == 1)
+      td.setAttribute("colspan", "3");
+
+    td.className = "comment-bottom";
+
+    if (comment.source_id != "1")
+    {
+      var cln = comment.type == 1 ? "logwork" : "comment";
+      span = document.createElement("span");
+      span.className = "comment-bottom-span comment-bottom-span-" + cln;
+      span.setAttribute("title", "imported from \"" + comment.sources_name + "\".");
+      span.appendChild(document.createTextNode(comment.sources_name));
+      td.appendChild(span);
+    }
+
+    tr.appendChild(td);
+
+    tbl.appendChild(tr);
+
     return tbl;
   },
   left_right: function(cmp)

@@ -122,7 +122,21 @@ sub action_comments_select {
 
 	my $sth = query_exec_cgi_val_subst
 		$hash,
-		"SELECT * FROM `comments` WHERE `task_id` = ?;\n",
+		"SELECT\n" .
+		"  `comments`.`id`,\n"        .
+		"  `comments`.`task_id`,\n"   .
+		"  `comments`.`type`,\n"      .
+		"  `comments`.`comment`,\n"   .
+		"  `comments`.`start_d`,\n"   .
+		"  `comments`.`start_t`,\n"   .
+		"  `comments`.`min`,\n"       .
+		"  `comments`.`created`,\n"   .
+		"  `comments`.`modified`,\n"  .
+		"  `comments`.`source_id`,\n" .
+		"  `sources`.`name` AS sources_name\n" .
+		"FROM `comments`\n"           .
+		"LEFT JOIN `sources` ON `comments`.`source_id` = `sources`.`id`\n" .
+		"WHERE `task_id` = ?;\n",
 		"task_id"
 	;
 

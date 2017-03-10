@@ -12,6 +12,24 @@
 .comment-logwork {
   background-color: #FFA1A1;
 }
+.comment-bottom {
+  padding: 5px;
+  text-align: right;
+  font-size: 7pt;
+}
+.comment-bottom-span {
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.comment-bottom-span-comment {
+  background-color: #FFA1A1;
+  color: #FFFED6;
+}
+.comment-bottom-span-logwork {
+  background-color: #FFE3E3;
+  color: #FFA1A1;
+}
 .task {
   border: 1px solid;
   padding: 10px 10px 10px 30px;
