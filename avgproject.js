@@ -185,11 +185,14 @@ var avgproject =
     td = document.createElement("td");
 
     if (comment.type == 1)
+    {
       td.setAttribute("colspan", "3");
 
-    td.style.setProperty("border-style", "solid");
-    td.style.setProperty("border-width", "1px 0px 0px");
-    td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
+      td.style.setProperty("border-style", "solid");
+      td.style.setProperty("border-width", "1px 0px 0px");
+      td.style.setProperty("border-top", "1px solid rgb(255, 0, 0)");
+    }
+
     td.style.setProperty("padding", "5px");
     var memo_comment = toolkit_memo_create(
       function ()
