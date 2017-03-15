@@ -214,20 +214,46 @@ var avgproject =
 
     td = document.createElement("td");
 
-    if (comment.type == 1)
-      td.setAttribute("colspan", "3");
-
     td.className = "comment-bottom";
+
+    td.setAttribute("colspan", "3");
+
+    var tbl2 = document.createElement("table");
+
+    tbl2.className = "comment-bottom-tbl";
+
+    var tr2, td2;
+
+    tr2 = document.createElement("tr");
+
+    td2 = document.createElement("td");
+
+    var cln = comment.type == 1 ? "logwork" : "comment";
+
+    td2.className = "comment-cr_mod comment-cr_mod-" + cln;
+
+    td2.appendChild(document.createTextNode(
+      "created: "    + comment.created +
+      ", modified: " + comment.modified
+    ));
+
+    tr2.appendChild(td2);
 
     if (comment.source_id != "1")
     {
-      var cln = comment.type == 1 ? "logwork" : "comment";
+      td2 = document.createElement("td");
+      td2.className = "comment-bottom-import";
       span = document.createElement("span");
-      span.className = "comment-bottom-span comment-bottom-span-" + cln;
+      span.className = "comment-bottom-import-span comment-bottom-import-span-" + cln;
       span.setAttribute("title", "imported from \"" + comment.sources_name + "\".");
       span.appendChild(document.createTextNode(comment.sources_name));
-      td.appendChild(span);
+      td2.appendChild(span);
+      tr2.appendChild(td2);
     }
+
+    tbl2.appendChild(tr2);
+
+    td.appendChild(tbl2);
 
     tr.appendChild(td);
 
