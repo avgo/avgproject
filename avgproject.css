@@ -30,6 +30,24 @@
   background-color: #FFE3E3;
   color: #FFA1A1;
 }
+.comment-top-start_d {
+  padding: 3px 3px 3px 10px;
+  text-align: center;
+  width: 150px;
+}
+.comment-top-start_t {
+  border-left: 1px solid rgb(255, 0, 0);
+  font-size: 9pt;
+  padding: 3px 3px 3px 10px;
+  text-align: center;
+  width: 100px;
+}
+.comment-top-min {
+  border-left: 1px solid rgb(255, 0, 0);
+  font-size: 9pt;
+  padding: 0px 15px;
+  text-align: left;
+}
 .task {
   border: 1px solid;
   padding: 10px 10px 10px 30px;

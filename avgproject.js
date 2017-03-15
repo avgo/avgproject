@@ -95,9 +95,7 @@ var avgproject =
       tr = document.createElement("tr");
 
       td = document.createElement("td");
-      td.style.setProperty("padding", "3px 3px 3px 10px");
-      td.style.setProperty("text-align", "center");
-      td.style.setProperty("width", "150px");
+      td.className = "comment-top-start_d";
       var dtmp_start_d = toolkit_datetime_picker(
         function()
         {
@@ -122,11 +120,7 @@ var avgproject =
       tr.appendChild(td);
 
       td = document.createElement("td");
-      td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
-      td.style.setProperty("font-size", "9pt");
-      td.style.setProperty("padding", "3px 3px 3px 10px");
-      td.style.setProperty("text-align", "center");
-      td.style.setProperty("width", "100px");
+      td.className = "comment-top-start_t";
       var label_hms_start_t = toolkit_label_hms(
         function ()
         {
@@ -150,9 +144,7 @@ var avgproject =
       tr.appendChild(td);
 
       td = document.createElement("td");
-      td.style.setProperty("border-left", "1px solid rgb(255, 0, 0)");
-      td.style.setProperty("font-size", "9pt");
-      td.style.setProperty("padding", "0px 15px");
+      td.className = "comment-top-min";
 
       var lbl_hm_min = toolkit_label_hm(
         function ()
